@@ -11,3 +11,4 @@
 .motion-enabled .npc-sprite{animation:npc-breathe 4.8s ease-in-out infinite!important}.motion-enabled .summon-stop .npc-sprite{animation:npc-float 5.2s ease-in-out infinite!important}.motion-enabled .adventure-stop .npc-sprite{animation-delay:-1.8s!important}.motion-enabled .fireflies i{animation:firefly 7s ease-in-out infinite!important;animation-delay:var(--delay)!important}.motion-enabled .lantern-light{animation:lantern-glow 4s ease-in-out infinite!important}.motion-paused .npc-sprite,.motion-paused .fireflies i,.motion-paused .lantern-light{animation:none!important}
 
 @media(min-width:701px){.motion-enabled .scene-world{transform:translate(calc(-50% + var(--pan-x,0px)),calc(-50% + var(--pan-y,0px)))}}
+.scene-footer{pointer-events:none}
