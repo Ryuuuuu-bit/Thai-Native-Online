@@ -1,0 +1,11 @@
+Use attached purple Thai guardian creature as identity reference. Create one production 2D hand-painted chibi sprite animation sheet with genuine transparent background. Preserve gold curled horns, lavender fluffy mane/tail, gold bracelets, jade necklace, cute face and compact four-legged anatomy. All frames FACE RIGHT, side-scrolling three-quarter view. Exactly 4 columns and 8 rows, 32 separated full-body frames on a strict invisible regular square-cell grid, portrait canvas target1024x2048. Uniform scale, bottom-center feet anchor, safe margins 12%. No text, grid lines, backdrop, ground shadow, labels, second creatures, poster composition.
+Rows of FOUR sequential frames left to right:
+1 idle gentle breathe/blink;
+2 move four short walking steps;
+3 aim attentive ready-to-pounce looking right, four subtle frames;
+4 cast crouch, inhale, spit magical breath pose, recover (no projectile painted outside mouth);
+5 hit recoil, flinch, brace, recover;
+6 guard crouch shielded behind paws, slight breathing;
+7 victory happy bounce, smile, land, cheerful paw-up;
+8 defeat slump, crouch exhausted, lie down tired, rest eyes closed.
+Same silhouette and feature sizes throughout, no costume changes, no anatomical distortion. Frame8 row body may lower but do not enlarge it. Cute friendly fantasy not scary. Clean alpha, no glow haze around each body.

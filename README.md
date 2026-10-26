@@ -47,10 +47,12 @@ Tests cover inventory validation, enhancement success/failure/cap, PvP normaliza
 
 ## Alpha boundaries
 
-A playable vertical slice with three dungeons and a small equipment/appearance catalog. Friend invitations, rankings, moderation tools, guilds, login/account recovery, cross-device saves and production load testing are not implemented. Whole-sprite animation is used instead of skeletal animation. No payments.
+A playable vertical slice with three dungeons and a small equipment/appearance catalog. Friend invitations, rankings, moderation tools, guilds, login/account recovery, cross-device saves and production load testing are not implemented. Animation uses action sheets and whole-image fallback rather than a skeletal rig. No payments.
 
 ## Art and audio
 
-Original chibi fantasy artwork generated with image_gen. Rounded chibi village and forest scenes, with smaller battlefield sprites. Cast anticipation, recoil, hit reaction, protective shields, healing rings, projectile glyphs, orbiting particles, impact bursts and victory hops are renderer-only effects.
+Original chibi fantasy artwork generated with image_gen. Guide and forest enemy use action-sheet animation with fixed shared scale and foot anchors; the medium retains whole-image motion. Layered valley/forest art, 24 VFX frames, item atlas art and responsive inventory/shop/forge/wardrobe interfaces are integrated. Rendering never changes server collision or damage.
+
+Open `/assets.html` for the interactive art and UI library. See [asset delivery notes](docs/ASSET-DELIVERY.md) for source frames, generation prompts, metadata workflow and animation limits. Download atlas metadata at `/assets/manifests/catalog.json`.
 
 Accepted lobby BGM: `assets/lobby-thai-varied.mp3`. New 80-second Thai-instrument battle music: `assets/battle-chibi-thai.mp3`. Eight combat effects cover cast, impact, burst, heal, shield, victory, defeat and enhancement. Generated with ElevenLabs; requests are saved beside the assets. Audio starts on user interaction, caps overlapping combat effects at three, and ducks battle music under effects. Music and motion controls are in the gear menu. Google Fonts have local fallbacks. Older prototype files are retained but not loaded by the current game.

@@ -1,0 +1,12 @@
+Use the attached image as CHARACTER IDENTITY REFERENCE, not as a composition. Produce a production 2D animation sprite sheet on a genuinely transparent background, no background haze or shadows. Same cute orange bob-haired Thai forest explorer girl, white plumeria hair pin, green scarf, cream shirt, green shorts, brown gloves and boots, gold details. Remove the tiger companion and map for combat; empty hands gesture with magical paper talisman in cast. Consistent 2.5-head chibi proportions. Entire body completely visible in every cell. Side-scrolling three-quarter view FACING RIGHT in every frame, preserve outfit and proportions. Clean detailed hand-painted cel shading matching reference, simplified enough for 112px tall game sprites.
+ONE sheet EXACTLY 4 columns by 8 rows, 32 frames. Portrait canvas, target 1024x2048. Each cell is a square of the same size. Invisible strict regular grid. All characters SAME SCALE, feet at the same bottom-center baseline within their cell, 12% safe margin each side. No labels, text, grid, frames, scenery, shadows behind sprites, no added characters.
+Each ROW is one action, four consecutive frames LEFT TO RIGHT:
+row1 IDLE: relaxed hands, breathe up, blink, settle.
+row2 MOVE: short stepping right cycle, left foot forward, passing, right foot forward, passing.
+row3 AIM: hands point at right with little talisman, four nearly identical steady aiming poses.
+row4 CAST: wind back talisman, extend right hand, release gesture, recover.
+row5 HIT: brace, recoil, wince, recover; no flashes drawn in.
+row6 GUARD: hands lift, guarding hands in front, firm stance, settle guarding.
+row7 VICTORY: smile hands up, little hop (keep whole body inside cell), land, cheerful pose.
+row8 DEFEAT: knees bend, kneel, sit tired, sit tired with eyes closed. No injury or gore.
+This must be a consistent sequential animation sheet, not a poster or costume collection. Accurate anatomy, matching leg lengths, two arms and two legs. All cells have isolated clean alpha.

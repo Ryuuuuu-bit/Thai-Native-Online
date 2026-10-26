@@ -45,11 +45,12 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
       res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control','no-store');return res.end(JSON.stringify(profiles[token]));
     }
     let file;
-    if(pathname==='/vendor/phaser.js')file=path.join(__dirname,'node_modules/phaser/dist/phaser.min.js');
+    if(pathname==='/assets/manifests/catalog.json')file=path.join(__dirname,'assets/manifests/catalog.json');
+    else if(pathname==='/vendor/phaser.js')file=path.join(__dirname,'node_modules/phaser/dist/phaser.min.js');
     else {let relative;try{relative=decodeURIComponent(pathname==='/index.html'||pathname==='/'?'index.html':pathname.slice(1));}catch{res.writeHead(400);return res.end();}
       if(!/^(?:[\w-]+\.(?:html|css|js)|assets\/[\w./-]+\.(?:png|jpg|webp|mp3))$/.test(relative)||relative.includes('..')||relative.includes('.test.')){res.writeHead(404);return res.end();}file=path.join(__dirname,relative);}
     if(!fs.existsSync(file)||!fs.statSync(file).isFile()){res.writeHead(404);return res.end('Not found');}
-    const types={'.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.mp3':'audio/mpeg'};
+    const types={'.json':'application/json','.js':'text/javascript','.css':'text/css','.html':'text/html','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp','.mp3':'audio/mpeg'};
     res.setHeader('Content-Type',(types[path.extname(file)]||'application/octet-stream')+(file.endsWith('.html')||file.endsWith('.js')||file.endsWith('.css')?'; charset=utf-8':''));res.setHeader('Cache-Control',file.includes('assets')?'public, max-age=3600':'no-cache');
     fs.createReadStream(file).pipe(res);
   });
