@@ -57,8 +57,8 @@ boxes={
     'female-bright':(60,30,345,290),'female-calm':(375,30,665,290),'female-joy':(690,30,990,290),
     'male-bright':(60,310,345,554),'male-calm':(375,310,665,554),'male-joy':(690,310,990,554),
     'crop':(0,556,355,858),'bob':(355,568,662,861),'tails':(662,566,1024,867),
-    'long':(0,858,380,1242),'flower':(380,864,665,1242),'ribbon':(665,880,1024,1230),
-    'crown':(0,1242,355,1536),'cat':(355,1242,725,1536)
+    'long':(0,858,380,1252),'flower':(380,864,665,1242),'ribbon':(665,880,1024,1230),
+    'crown':(0,1258,355,1536),'cat':(355,1242,725,1536)
 }
 data['sheets']['parts']=dict(image=name,width=im.width,height=im.height,frames={key:frame(alpha,box) for key,box in boxes.items()})
 (ROOT/'sprite-character-data.js').write_text("(function(root){const data="+json.dumps(data,separators=(',',':'))+";if(typeof module==='object'&&module.exports)module.exports=data;else root.NativeSpriteParts=data;})(typeof globalThis!=='undefined'?globalThis:this);\n",encoding='utf-8')
