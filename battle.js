@@ -1,0 +1,26 @@
+'use strict';
+const RPG=window.ThaiNativeBattle,$=id=>document.getElementById(id);
+let chosen=RPG.roster.slice(0,5).map(h=>h.key),draft=[],state=RPG.create(chosen),started=false,paused=false,automatic=true,speed=1,timer=null,editing=false;
+const picture=art=>`<span class="portrait portrait-${art}" aria-hidden="true"></span>`;
+function unit(h){const hit=state.last?.targets.includes(h.id),acting=state.last?.actor===h.id;return `<div class="fighter slot-${h.id.slice(1)} ${h.hp<=0?'fallen':''} ${hit?'hit':''} ${acting?'acting':''}" style="--hero-color:${h.color}"><div class="fighter-health"><span style="width:${h.hp/h.maxHp*100}%"></span></div><div class="fighter-portrait">${picture(h.art)}</div><span class="fighter-name">${h.name}</span><small>${h.hp} / ${h.maxHp}${h.shield?' · 🛡 '+h.shield:''}</small><div class="energy-dots">${[1,2,3].map(n=>`<i class="${h.energy>=n?'filled':''}"></i>`).join('')}</div></div>`;}
+function render(){
+ $('allies').innerHTML=state.player.map(unit).join('');$('enemies').innerHTML=state.enemy.map(unit).join('');$('round').textContent=started?`รอบที่ ${state.round||1}`:'เตรียมทีม';
+ $('ally-count').textContent=`${state.player.filter(h=>h.hp>0).length} / 5`;$('enemy-count').textContent=`${state.enemy.filter(h=>h.hp>0).length} / 5`;
+ $('skills').innerHTML=state.player.map((h,i)=>`<button class="skill-card ${h.energy===3?'charged':''} ${h.hp<=0?'defeated':''}" data-skill="${h.id}" ${!started||paused||editing||state.winner||h.hp<=0||h.energy<3?'disabled':''} aria-label="${h.name} ${h.skill} ${h.energy}/3 ${h.description}" style="--hero-color:${h.color}"><div class="skill-picture">${picture(h.art)}<span>${i<2?'แนวหน้า':'แนวหลัง'}</span></div><div class="skill-copy"><small>${h.role}</small><b>${h.name}</b><strong>${h.skill}</strong><p>${h.description}</p><div class="skill-meter"><span style="width:${h.energy/3*100}%"></span></div><em>${h.hp<=0?'พักฟื้น':h.energy===3?'✦ กดใช้สกิล':`พลังอาคม ${h.energy} / 3`}</em></div></button>`).join('');
+ $('pause').disabled=!started||!!state.winner;$('pause').textContent=paused?'เล่นต่อ':'พัก';$('start').textContent=started?'เริ่มด่านใหม่ ↻':'เริ่มการประลอง ⚔';
+ $('status').textContent=state.winner?'✦ จบการประลอง':!started?'✦ ภูติทั้ง 5 พร้อมออกเดินทาง':paused?'Ⅱ หยุดพักการประลอง':'⚔ กำลังต่อสู้ · เก็บพลังเพื่อใช้สกิล';$('battle-message').textContent=state.last?state.log[0]:'เพื่อนร่วมทีมพร้อมแล้ว! เริ่มผจญภัยกันเลย';$('log').innerHTML=state.log.map(t=>`<li>${t}</li>`).join('');
+ if(state.winner){clearTimeout(timer);$('result-icon').textContent=state.winner==='player'?'✦':'☽';$('result-title').textContent=state.winner==='player'?'ทีมภูติตัวจิ๋วชนะแล้ว!':'พักก่อน แล้วลองอีกครั้ง';$('result-copy').textContent=`จบการประลองใน ${state.round} รอบ · เพื่อนที่ยังยืนหยัด ${state.player.filter(h=>h.hp>0).length} ตัว`;if(!$('result').open)$('result').showModal();}
+}
+function schedule(){clearTimeout(timer);if(started&&!paused&&!editing&&!state.winner)timer=setTimeout(()=>{RPG.tick(state,automatic);render();schedule();},1000/speed);}
+function reset(run=false){clearTimeout(timer);$('result').close();state=RPG.create(chosen);started=run;paused=false;render();schedule();}
+function renderRoster(){$('selected-count').textContent=`${draft.length} / 5`;$('roster').innerHTML=RPG.roster.map(h=>{const n=draft.indexOf(h.key);return `<button class="roster-card ${n>=0?'picked':''}" data-hero="${h.key}" aria-pressed="${n>=0}"><div>${picture(h.art)}<span>${n>=0?n+1:'+'}</span></div><b>${h.name}</b><small>${h.role} · HP ${h.hp}</small><p>${h.description}</p></button>`;}).join('');$('save-team').disabled=draft.length!==5;}
+function editTeam(){editing=true;clearTimeout(timer);draft=[...chosen];$('result').close();$('team-error').textContent='';renderRoster();$('team-dialog').showModal();}
+$('start').onclick=()=>reset(true);$('retry').onclick=()=>reset(true);$('pause').onclick=()=>{paused=!paused;render();schedule();};
+$('auto').onclick=()=>{automatic=!automatic;$('auto').textContent=`สกิลอัตโนมัติ: ${automatic?'เปิด':'ปิด'}`;$('auto').setAttribute('aria-pressed',String(automatic));};
+$('speed').onclick=()=>{speed=speed===1?2:1;$('speed').textContent=`ความเร็ว ×${speed}`;schedule();};
+$('help').onclick=()=>{editing=true;clearTimeout(timer);$('guide').showModal();};$('formation-button').onclick=editTeam;$('result-team').onclick=editTeam;
+document.addEventListener('click',e=>{const skill=e.target.closest('[data-skill]');if(skill&&started&&!paused&&!editing&&!state.winner){if(RPG.skill(state,'player',skill.dataset.skill)){render();schedule();}}const hero=e.target.closest('[data-hero]');if(hero){const key=hero.dataset.hero;if(draft.includes(key))draft=draft.filter(k=>k!==key);else if(draft.length<5)draft.push(key);else{$('team-error').textContent='ทีมเต็มแล้ว · นำเพื่อนออกหนึ่งตัวก่อนเลือกตัวใหม่';return;}$('team-error').textContent='';renderRoster();}const close=e.target.closest('[data-close]');if(close)$(close.dataset.close).close();});
+for(const id of ['guide','team-dialog'])$(id).addEventListener('close',()=>{editing=false;schedule();});
+$('save-team').onclick=()=>{if(draft.length!==5)return;chosen=[...draft];$('team-dialog').close();reset();};
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!state.winner){paused=true;clearTimeout(timer);render();}});
+render();
