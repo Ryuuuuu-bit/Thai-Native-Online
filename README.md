@@ -61,10 +61,18 @@ Accepted lobby BGM: `assets/lobby-thai-varied.mp3`. New 80-second Thai-instrumen
 
 New guests see the creator on first connection. Existing guests open their portrait or the medium NPC. Choose male/female, three faces, four hairstyles, five head-accessory choices (including none), and 50 separate fashions per gender. The ten categories include Thai fantasy, forest, magic, suits, streetwear, football, festivals, basketball, runway and winter. The 100 new outfits are free; the three legacy outfits retain their original ownership and prices.
 
-Generated raster paper-doll bodies, faces, hair and head accessories share the NPC's chibi painted style. Each outfit has a default palette; choosing another outfit applies its palette. Five color pickers control skin, hair, clothing, trim and head decoration. Restore outfit colors or discard the entire unsaved draft. Neutral fabric, dark outlines and facial eyes are preserved by the selective dye renderer.
+Generated raster paper-doll bodies, faces, hair and head accessories share the NPC's chibi painted style. Each outfit has a default palette; choosing another outfit applies its palette. Five color pickers control skin, hair, clothing, trim and head decoration. Restore outfit colors or discard the entire unsaved draft. Neutral fabric, dark outlines and facial eyes are preserved by the selective dye renderer. Source metadata separates exposed skin from ivory fabric, so darker skin does not recolor cream skirts or white jackets.
 
 The server validates the full appearance and name before saving. Cosmetics do not change equipment statistics. Saved appearance is replicated to other room participants and used by the lobby portrait, equipment preview, battle portrait and battlefield sprite. Older profiles and progress remain valid.
 
 Sources: fashion-catalog.js (stable IDs, gender, names, palettes), sprite-character-data.js (source frames), sprite-character.js (Canvas composition, dye, action sheets), character-art.js (editor and legacy SVG fallback), and character-ui.css (responsive controls). See [all 100 designs](docs/FASHION-CATALOG.md) and [raster production notes](docs/PAINTED-CHARACTERS.md).
 
-Eighteen automated tests cover validation, atomic unlocks, persistence, multiplayer appearance replication, catalog pagination, raster source bounds, palettes and dye isolation, alongside existing gameplay checks. Browser checks include saved dye after refresh, male/female previews, mobile-width layout and a solo movement/shot. Motion uses layered bob/lean/recoil, not articulated limb animation. Physical mobile devices and production load were not tested.
+Twenty-three automated tests cover validation, atomic unlocks, persistence, multiplayer appearance replication, catalog pagination, raster source bounds, palettes and dye isolation, alongside existing gameplay checks. Browser checks include saved dye after refresh, male/female previews, mobile-width layout and a solo movement/shot. Motion uses layered bob/lean/recoil, not articulated limb animation. Physical mobile devices and production load were not tested.
+
+## Review fixes · 2026-10-27
+
+All body atlases are indexed by complete connected silhouettes rather than fixed cell cuts. Painted action frames fit their actual layer bounds and use the shared foot baseline in combat. Battle portraits refresh after asynchronous character loading. Part caches reuse unchanged regions and do not reparse target colors for every pixel.
+
+Reselecting the current outfit preserves draft dye. Restoring saved appearance returns to the page containing the outfit. Queue cancellation stays closed; reconnects reconcile the queue with server state, and browser-history restores refresh closed sockets.
+
+Surrendering or disconnecting past the grace period gives no rewards. A teammate leaving off-turn does not cancel the remaining player's projectile or skip their turn. Departed players are removed from room delivery and may return to the lobby or start another encounter. Normal completed defeats retain their consolation rewards.

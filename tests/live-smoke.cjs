@@ -11,6 +11,7 @@ const assert=require('node:assert/strict'),{WebSocket}=require('ws'),G=require('
   try{await wait('hello');const appearance={...G.appearanceDefaults,gender:'male',hair:'crop',head:'none',outfit:'male-academy-1',outfitColor:'#326ad4'};send({type:'character',name:'Fashion QA',appearance});assert.deepEqual((await wait('profile')).profile.appearance,appearance);send({type:'inventory',action:'upgrade',id:'talisman'});const upgraded=await wait('profile');assert.equal(upgraded.profile.upgrades.talisman,1);
     const saved=await (await fetch(base+'/api/profile',{headers:{Cookie:cookie}})).json();assert.equal(saved.upgrades.talisman,1);assert.deepEqual(saved.appearance,appearance);
     send({type:'play',mode:'solo',stage:'grove'});const {room}=await wait('room'),aim=G.botAim(room);assert.deepEqual(room.actors[0].appearance,appearance);send({type:'shoot',angle:aim.angle,power:aim.power,skill:'normal'});const shot=await wait('shot');assert.ok(shot.flight.damage.length);send({type:'leave'});await wait('left');
-    console.log('PASS: HTTPS health, saved fashion/dye, enhancement, WSS, room appearance, authoritative projectile damage and leaving');
+    const after=await (await fetch(base+'/api/profile',{headers:{Cookie:cookie}})).json();for(const key of ['gold','stones','xp'])assert.equal(after[key],saved[key],'surrender must not grant '+key);
+    console.log('PASS: health, saved fashion/dye, enhancement, WebSocket, combat and no surrender rewards');
   }finally{ws.close();}
 })().catch(error=>{console.error(error.message);process.exitCode=1;});

@@ -13,14 +13,14 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
   const broadcast=msg=>{for(const c of clients.values())send(c.ws,msg);};
   const later=(fn,delay)=>{const t=setTimeout(()=>{timers.delete(t);fn();},delay);t.unref();timers.add(t);return t;};
   const cancel=t=>{clearTimeout(t);timers.delete(t);};
-  const inRoom=id=>[...rooms.values()].find(r=>r.phase!=='finished'&&r.actors.some(a=>a.id===id));
-  const roomSend=(r,msg)=>r.actors.filter(a=>!a.bot).forEach(a=>send(clients.get(a.id)?.ws,msg));
+  const inRoom=id=>[...rooms.values()].find(r=>r.phase!=='finished'&&r.actors.some(a=>a.id===id&&!a.left));
+  const roomSend=(r,msg)=>r.actors.filter(a=>!a.bot&&!a.left).forEach(a=>send(clients.get(a.id)?.ws,msg));
   const publicRoom=r=>{const {timer,paid,...state}=r;return state;};
   const state=r=>roomSend(r,{type:'room',room:publicRoom(r)});
   function dequeue(id){for(const q of Object.values(queues)){const i=q.indexOf(id);if(i>=0)q.splice(i,1);}}
   function reward(r){
     if(r.paid)return;r.paid=true;
-    for(const a of r.actors.filter(a=>!a.bot)){
+    for(const a of r.actors.filter(a=>!a.bot&&!a.left)){
       const p=Object.values(profiles).find(p=>p.id===a.id),won=a.team===r.winner,stage=G.stages.find(s=>s.id===r.stage);
       const loot=won?{gold:r.mode==='pvp'?160:stage.gold,stones:r.mode==='pvp'?2:stage.stones,xp:r.mode==='pvp'?70:stage.xp}:{gold:35,stones:1,xp:20};
       p.gold+=loot.gold;p.stones+=loot.stones;p.xp+=loot.xp;if(won){p.wins++;if(r.mode!=='pvp'&&!p.cleared.includes(stage.id))p.cleared.push(stage.id);}
@@ -35,7 +35,12 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
   }
   function fire(r,id,angle,power,skill){const flight=G.shoot(r,id,angle,power,skill);cancel(r.timer);roomSend(r,{type:'shot',room:publicRoom(r),flight});r.timer=later(()=>{if(r.phase!=='flight')return;G.next(r);schedule(r);state(r);},Math.max(900,flight.points.length*50+500));}
   function start(mode,people,stage){people.forEach(p=>dequeue(p.id));const r=G.createRoom(crypto.randomUUID(),mode,people,stage);rooms.set(r.id,r);schedule(r);state(r);}
-  function leave(id){dequeue(id);const r=inRoom(id);if(!r)return;const a=r.actors.find(a=>a.id===id);a.hp=0;cancel(r.timer);G.next(r);schedule(r);state(r);}
+  function leave(id){
+    dequeue(id);const r=inRoom(id);if(!r)return;const a=r.actors.find(a=>a.id===id);a.left=true;a.hp=0;r.revision++;
+    // Leaving off-turn must not skip a teammate's turn or cancel their projectile.
+    if(G.active(r).id===id||new Set(r.actors.filter(a=>a.hp>0).map(a=>a.team)).size<=1){cancel(r.timer);G.next(r);schedule(r);}
+    state(r);
+  }
   const server=http.createServer((req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');
     const pathname=new URL(req.url,'http://localhost').pathname;
@@ -64,9 +69,10 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
   wss.on('connection',(ws,req)=>{
     const p=profiles[tokenOf(req)],old=clients.get(p.id);if(old){send(old.ws,{type:'error',message:'เปิดเกมในแท็บใหม่แล้ว แท็บเดิมถูกพัก'});old.ws.close(4001);}
     const c={ws,p,lastChat:0,messages:0,window:Date.now()};clients.set(p.id,c);
-    send(ws,{type:'hello',profile:p,chat:history,online:clients.size});broadcast({type:'presence',online:clients.size});
+    send(ws,{type:'hello',profile:p,chat:history,online:clients.size,queue:Object.keys(queues).find(mode=>queues[mode].includes(p.id))||null});broadcast({type:'presence',online:clients.size});
     const existing=inRoom(p.id);if(existing)send(ws,{type:'room',room:publicRoom(existing)});
     ws.on('message',raw=>{
+      if(clients.get(p.id)!==c)return;
       try{
         if(Date.now()-c.window>1000){c.window=Date.now();c.messages=0;}if(++c.messages>20)throw Error('ส่งคำสั่งเร็วเกินไป');
         const msg=JSON.parse(raw.toString());if(!msg||typeof msg!=='object')throw Error('คำสั่งไม่ถูกต้อง');const r=inRoom(p.id);

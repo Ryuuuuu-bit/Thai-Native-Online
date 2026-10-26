@@ -47,4 +47,4 @@ Validated with thirteen automated tests, a fresh guest creation/save/reload, col
 
 The current browser renderer uses generated raster parts in the NPC art style, superseding the earlier vector character described above. There are 50 male and 50 female outfits, ten categories, varied preset palettes and selective custom dye. Suits, football, basketball and runway designs use dedicated world-fashion atlases. The original costumes remain available, with saved ownership and prices preserved.
 
-See [production sources, exact prompts and limits](PAINTED-CHARACTERS.md) and [all designs](FASHION-CATALOG.md). Eighteen automated tests pass, including source-frame bounds, dye behavior, catalog/gender validation and persistent multiplayer appearance.
+See [production sources, exact prompts and limits](PAINTED-CHARACTERS.md) and [all designs](FASHION-CATALOG.md). Twenty-three automated tests pass, including source-frame bounds, dye behavior, catalog/gender validation and persistent multiplayer appearance.
