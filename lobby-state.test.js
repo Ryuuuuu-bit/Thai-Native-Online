@@ -1,0 +1,10 @@
+const assert=require('node:assert/strict'),L=require('./lobby-state');
+let s=L.create();assert.equal(L.buy(s,'missing'),false);assert.equal(s.coins,1200);
+assert.equal(L.buy(s,'potion'),true);assert.equal(s.coins,1080);assert.equal(s.inventory.potion,1);
+s.coins=119;assert.equal(L.buy(s,'potion'),false);assert.equal(s.inventory.potion,1);
+s.coins=120;assert.equal(L.buy(s,'potion'),true);assert.equal(s.coins,0);assert.equal(s.inventory.potion,2);
+s=L.create();assert.equal(L.summon(s,[],()=>0),null);assert.equal(s.tickets,3);
+assert.equal(L.summon(s,['ghost','tree'],()=>0),'ghost');assert.equal(L.summon(s,['ghost','tree'],()=>0.999),'tree');
+assert.equal(L.summon(s,['ghost','tree'],()=>0),'ghost');assert.equal(s.spirits.ghost,2);assert.equal(s.tickets,0);
+assert.equal(L.summon(s,['ghost'],()=>0),null);assert.equal(s.spirits.ghost,2);
+console.log('Passed: purchases, invalid item, exact/insufficient funds, empty pool, summon bounds, duplicates, ticket exhaustion.');
