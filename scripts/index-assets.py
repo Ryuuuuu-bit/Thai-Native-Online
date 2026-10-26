@@ -45,7 +45,7 @@ guide['frames'].update({f'guard-{i}':dict(guide['frames'][f'hit-{min(2+i%2,3)}']
 for sheet in [guide,enemy]:
     sheet['baseHeight'] = max(sheet['frames'][f'idle-{i}']['h'] for i in range(4))
     sheet['actions'] = {name:{'frames':[f'{name}-{i}' for i in range(4)], 'fps':{'idle':4,'move':12,'aim':4,'cast':12,'hit':12,'guard':5,'victory':8,'defeat':7}[name], 'loop':name in ['idle','move','aim','guard']} for name in actions}
-vfx = index('assets/sheets/combat-vfx.png', list(range(0,1537,256)), ['impact','burst','heal','shield','hit','victory'], False)
+vfx = index('assets/sheets/combat-vfx.png', [0,266,535,782,1055,1263,1536], ['impact','burst','heal','shield','hit','victory'], False)
 items = index('assets/items-concept-v1.png', [0,314,627,941,1254], ['r1','r2','r3','r4'])
 ids = ['talisman','flame','lotus','cloth','robe','thread','moon','gold','enhancement_stone','experience_vial','healing_potion','mana_potion','summon_ticket','dungeon_key','treasure_chest','spirit_essence']
 items['frames'] = dict(zip(ids, items['frames'].values()))
