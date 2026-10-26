@@ -59,15 +59,15 @@ Accepted lobby BGM: `assets/lobby-thai-varied.mp3`. New 80-second Thai-instrumen
 
 ## Character creation
 
-New guests see the creator on first connection. Existing guests open their portrait or the medium NPC. Choose male/female, three faces, four hairstyles, five head-accessory choices (including none), and 50 separate fashions per gender. The ten categories include Thai fantasy, forest, magic, suits, streetwear, football, festivals, basketball, runway and winter. The 100 new outfits are free; the three legacy outfits retain their original ownership and prices.
+New guests see the creator on first connection. Existing guests open their portrait or the medium NPC. Choose male/female, eight faces, twelve hairstyles, five head-accessory choices (including none), and 60 separate fashions per gender. The twelve categories include Thai fantasy, forest, magic, suits, streetwear, football, festivals, basketball, runway, winter, urban casual and occupations/leisure. The 120 outfits are free; the three legacy outfits retain their original ownership and prices.
 
 Generated raster paper-doll bodies, faces, hair and head accessories share the NPC's chibi painted style. Each outfit has a default palette; choosing another outfit applies its palette. Five color pickers control skin, hair, clothing, trim and head decoration. Restore outfit colors or discard the entire unsaved draft. Neutral fabric, dark outlines and facial eyes are preserved by the selective dye renderer. Source metadata separates exposed skin from ivory fabric, so darker skin does not recolor cream skirts or white jackets.
 
 The server validates the full appearance and name before saving. Cosmetics do not change equipment statistics. Saved appearance is replicated to other room participants and used by the lobby portrait, equipment preview, battle portrait and battlefield sprite. Older profiles and progress remain valid.
 
-Sources: fashion-catalog.js (stable IDs, gender, names, palettes), sprite-character-data.js (source frames), sprite-character.js (Canvas composition, dye, action sheets), character-art.js (editor and legacy SVG fallback), and character-ui.css (responsive controls). See [all 100 designs](docs/FASHION-CATALOG.md) and [raster production notes](docs/PAINTED-CHARACTERS.md).
+Sources: fashion-catalog.js (stable IDs, gender, names, palettes), sprite-character-data.js (source frames), sprite-character.js (Canvas composition, dye, action sheets), character-art.js (editor and legacy SVG fallback), and character-ui.css (responsive controls). See [all 120 designs](docs/FASHION-CATALOG.md) and [raster production notes](docs/PAINTED-CHARACTERS.md).
 
-Twenty-three automated tests cover validation, atomic unlocks, persistence, multiplayer appearance replication, catalog pagination, raster source bounds, palettes and dye isolation, alongside existing gameplay checks. Browser checks include saved dye after refresh, male/female previews, mobile-width layout and a solo movement/shot. Motion uses layered bob/lean/recoil, not articulated limb animation. Physical mobile devices and production load were not tested.
+Twenty-four automated tests cover validation, atomic unlocks, persistence, multiplayer appearance replication, catalog pagination, raster source bounds, palettes and dye isolation, alongside existing gameplay checks. Browser checks include saved dye after refresh, male/female previews, mobile-width layout and a solo movement/shot. Motion uses layered bob/lean/recoil, not articulated limb animation. Physical mobile devices and production load were not tested.
 
 ## Review fixes · 2026-10-27
 
@@ -76,3 +76,9 @@ All body atlases are indexed by complete connected silhouettes rather than fixed
 Reselecting the current outfit preserves draft dye. Restoring saved appearance returns to the page containing the outfit. Queue cancellation stays closed; reconnects reconcile the queue with server state, and browser-history restores refresh closed sockets.
 
 Surrendering or disconnecting past the grace period gives no rewards. A teammate leaving off-turn does not cancel the remaining player's projectile or skip their turn. Departed players are removed from room delivery and may return to the lobby or start another encounter. Normal completed defeats retain their consolation rewards.
+
+## Expanded customization · 2026-10-27
+
+Added 20 painted garments (ten per gender), ten face parts (five new expressions per gender) and eight hairstyles. There are now 60 outfits per gender, eight selectable faces per gender, twelve shared hairstyles and five existing head-accessory choices. Face and hair buttons show painted previews; color changes update these previews alongside the character. Old saved IDs and dyes remain valid. New outfits are free and retain their own preset palettes.
+
+Four additional source atlases and their exact native image_gen prompts are listed in [painted character production](docs/PAINTED-CHARACTERS.md). Every source PNG remains unchanged; index metadata supplies crop bounds, skin regions and calibrated hair placement. Saved new face/hair/outfit IDs are validated and replicated through the same server and battle compositor.

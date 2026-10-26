@@ -45,6 +45,8 @@ Validated with thirteen automated tests, a fresh guest creation/save/reload, col
 
 ## Painted fashion expansion
 
-The current browser renderer uses generated raster parts in the NPC art style, superseding the earlier vector character described above. There are 50 male and 50 female outfits, ten categories, varied preset palettes and selective custom dye. Suits, football, basketball and runway designs use dedicated world-fashion atlases. The original costumes remain available, with saved ownership and prices preserved.
+The current browser renderer uses generated raster parts in the NPC art style, superseding the earlier vector character described above. There are 60 male and 60 female outfits, twelve categories, varied preset palettes and selective custom dye. Suits, football, basketball and runway designs use dedicated world-fashion atlases. The original costumes remain available, with saved ownership and prices preserved.
 
-See [production sources, exact prompts and limits](PAINTED-CHARACTERS.md) and [all designs](FASHION-CATALOG.md). Twenty-three automated tests pass, including source-frame bounds, dye behavior, catalog/gender validation and persistent multiplayer appearance.
+See [production sources, exact prompts and limits](PAINTED-CHARACTERS.md) and [all designs](FASHION-CATALOG.md). Twenty-four automated tests pass, including source-frame bounds, dye behavior, catalog/gender validation and persistent multiplayer appearance.
+
+The latest customization expansion adds urban casual and occupations/leisure, eight faces per gender and twelve hairstyles with painted option thumbnails. Original sprite PNG files and exact prompts are preserved; see the production notes for all nine atlases.

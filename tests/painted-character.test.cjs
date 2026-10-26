@@ -1,7 +1,7 @@
 'use strict';
 const {test}=require('node:test'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
 const G=require('../rpg-core.js'),D=require('../sprite-character-data.js'),Paint=require('../sprite-character.js');
-test('all 100 outfits resolve to complete raster frames, palettes and valid source bounds',()=>{
+test('all 120 outfits resolve to complete raster frames, palettes and valid source bounds',()=>{
   const refs=new Set(),palettes=new Set();
   for(const s of Object.values(D.sheets)){
     const png=fs.readFileSync(path.join(__dirname,'..',s.image));assert.equal(png.readUInt32BE(16),s.width);assert.equal(png.readUInt32BE(20),s.height);
@@ -12,7 +12,7 @@ test('all 100 outfits resolve to complete raster frames, palettes and valid sour
     assert.ok(D.sheets[ref.sheet].frames[ref.id]);refs.add(ref.sheet+ref.id);palettes.add(a.outfitColor);assert.deepEqual(G.validateAppearance(a),a);
     if(['royal','academy','sea','craft'].includes(outfit.theme))assert.match(ref.sheet,/-world$/);
   }
-  assert.equal(refs.size,100);assert.equal(palettes.size,10);
+  assert.equal(refs.size,120);assert.equal(palettes.size,10);
   assert.equal(Paint.bodyRef({...G.appearanceDefaults,outfit:'jade'}).sheet,'female');
 });
 test('selective dye keeps neutral fabric and face eyes, preserves shadows and supports dark/light colors',()=>{
@@ -25,8 +25,8 @@ test('selective dye keeps neutral fabric and face eyes, preserves shadows and su
   const dark=Paint.dye([30,60,90],'body',a),light=Paint.dye([65,130,170],'body',a);assert.ok(light[0]>dark[0]);
 });
 test('every painted outfit stays inside its frame during all 32 action samples, including crowns and defeat',()=>{
-  for(const o of G.outfits.filter(o=>o.gender))for(const hair of ['crop','bob','tails','long'])for(const head of ['none','crown','cat'])for(const action of ['idle','move','aim','cast','hit','guard','victory','defeat'])for(let frame=0;frame<4;frame++){
-    const a={...G.appearanceDefaults,gender:o.gender,outfit:o.id,hair,head},layout=Paint.frameLayout(a,action,frame),b=layout.bounds;
+  for(const o of G.outfits.filter(o=>o.gender))for(const hair of Object.keys(G.appearanceOptions.hair))for(const head of ['none','crown','cat'])for(const action of ['idle','move','aim','cast','hit','guard','victory','defeat'])for(let frame=0;frame<4;frame++){
+    const a={...G.appearanceDefaults,gender:o.gender,outfit:o.id,hair,head,face:Object.keys(G.appearanceOptions.face)[(o.variant+frame)%8]},layout=Paint.frameLayout(a,action,frame),b=layout.bounds;
     assert.ok(b.left>=3.999&&b.right<=252.001&&b.top>=3.999&&b.bottom<=316.001,`${o.id} ${hair} ${head} ${action}-${frame}`);
     assert.ok(layout.scale>0&&layout.scale<=1);
   }
@@ -37,4 +37,13 @@ test('skin dye reaches both exposed arms while leaving ivory skirts and a white 
   const a={...G.appearanceDefaults,skinColor:'#7b503b'};
   assert.deepEqual(Paint.dye([177,119,95],'body',a,undefined,false),[177,119,95]);
   assert.notDeepEqual(Paint.dye([249,224,200],'body',a,undefined,true),[249,224,200]);
+});
+test('eight faces per gender and twelve hairstyles all resolve to distinct painted sources',()=>{
+  assert.equal(Object.keys(G.appearanceOptions.face).length,8);assert.equal(Object.keys(G.appearanceOptions.hair).length,12);
+  for(const gender of ['male','female']){
+    const faces=new Set(),hairs=new Set();
+    for(const face of Object.keys(G.appearanceOptions.face)){const a={...G.appearanceDefaults,gender,face};G.validateAppearance(a);const layer=Paint.frameLayout(a).layers.find(l=>l.kind==='face');assert.ok(D.sheets[layer.sheet].frames[layer.id]);faces.add(layer.sheet+layer.id);}
+    for(const hair of Object.keys(G.appearanceOptions.hair)){const a={...G.appearanceDefaults,gender,hair};G.validateAppearance(a);const layer=Paint.frameLayout(a).layers.find(l=>l.kind==='hair');assert.ok(D.sheets[layer.sheet].frames[layer.id]);hairs.add(layer.sheet+layer.id);}
+    assert.equal(faces.size,8);assert.equal(hairs.size,12);
+  }
 });

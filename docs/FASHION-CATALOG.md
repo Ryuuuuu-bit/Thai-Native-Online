@@ -1,6 +1,6 @@
 # ThaiNative · Fashion catalog
 
-50 male + 50 female raster costumes. All new designs are free, recolorable cosmetics. Legacy ranger, medium and jade outfits remain separately available. Each design has a preset palette; selecting a new outfit applies its palette, and the color controls can override clothing and trim.
+60 male + 60 female raster costumes. All new designs are free, recolorable cosmetics. Legacy ranger, medium and jade outfits remain separately available. Each design has a preset palette; choosing a different outfit applies its palette, and color controls override clothing and trim.
 
 ## ไทยแฟนตาซี
 
@@ -101,3 +101,23 @@
 | 3 | เสื้อถักกวางน้อย (`male-winter-3`) | เดรสถักหิมะน้อย (`female-winter-3`) |
 | 4 | นักส่งสารเหมันต์ (`male-winter-4`) | สาวส่งสารสายหมอก (`female-winter-4`) |
 | 5 | นายพรานน้ำค้าง (`male-winter-5`) | ชุดผ้าพันคอรุ่งอรุณ (`female-winter-5`) |
+
+## ลำลองร่วมสมัย
+
+| # | Male | Female |
+|---|---|---|
+| 1 | ฮู้ดคาร์โก้เมฆา (`male-urban-1`) | ฮู้ดเดรสละอองดาว (`female-urban-1`) |
+| 2 | บอมเบอร์จันทร์คราม (`male-urban-2`) | บอมเบอร์กระโปรงพลีต (`female-urban-2`) |
+| 3 | เดนิมนักเดินทาง (`male-urban-3`) | เดนิมสาวขากว้าง (`female-urban-3`) |
+| 4 | เชิ้ตวันพักผ่อน (`male-urban-4`) | นิตเปิดไหล่สายลม (`female-urban-4`) |
+| 5 | วินด์เบรกเกอร์เทคเวท (`male-urban-5`) | คาร์โก้สเกิร์ตเทคเวท (`female-urban-5`) |
+
+## อาชีพและวันพักผ่อน
+
+| # | Male | Female |
+|---|---|---|
+| 1 | นักสืบจันทร์เสี้ยว (`male-journey-1`) | นักสืบสาวโคมแก้ว (`female-journey-1`) |
+| 2 | นายช่างกลภูติ (`male-journey-2`) | ช่างสาวเอี๊ยมคราม (`female-journey-2`) |
+| 3 | เชฟครัวเรือนบุญ (`male-journey-3`) | เชฟสาวขนมหวาน (`female-journey-3`) |
+| 4 | นักสู้ผ้าพันอาคม (`male-journey-4`) | นักสู้สาวสายสิญจน์ (`female-journey-4`) |
+| 5 | ชุดนอนฝันจันทรา (`male-journey-5`) | ชุดนอนกระต่ายดาว (`female-journey-5`) |

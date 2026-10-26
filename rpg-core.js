@@ -10,7 +10,7 @@
     {id:'moon',slot:'charm',name:'จี้จันทรา',icon:'☽',hp:50,cost:400,desc:'พลังชีวิต +50'}
   ];
   const outfits=[{id:'ranger',name:'นักเดินทางพงไพร',art:'guide',cost:0},{id:'medium',name:'ผู้ใช้มนตร์จันทรา',art:'medium',cost:0},{id:'jade',name:'ผู้พิทักษ์หยก',art:'guide',cost:300,tint:0x80efd4},...F.outfits];
-  const appearanceOptions={gender:{male:'ชาย',female:'หญิง'},face:{bright:'ตากลมสดใส',calm:'สุขุมนุ่มนวล',joy:'ยิ้มแย้ม'},hair:{crop:'ผมสั้นซอย',bob:'บ๊อบมน',tails:'แกละคู่',long:'ผมยาว'},head:{none:'ไม่สวม',flower:'ดอกจำปี',ribbon:'โบผูกผม',crown:'กระบังจันทร์',cat:'หูแมวภูติ'}};
+  const appearanceOptions={gender:{male:'ชาย',female:'หญิง'},face:{bright:'ตากลมสดใส',calm:'สุขุมนุ่มนวล',joy:'ยิ้มแย้ม',wink:'ขยิบตาซุกซน',confident:'มั่นใจพร้อมลุย',shy:'เขินแก้มแดง',surprised:'ตาโตตกใจ',sleepy:'ง่วงนุ่มนิ่ม'},hair:{crop:'ผมสั้นซอย',bob:'บ๊อบมน',tails:'แกละคู่',long:'ผมยาว',spike:'สั้นฟูตั้ง',curtain:'แสกกลางสั้น',curl:'หยิกฟูนุ่ม',blunt:'บ๊อบหน้าม้าตรง',pony:'หางม้าสูง',buns:'ดังโงะคู่',braid:'เปียข้างพลิ้ว',layered:'ยาวเลเยอร์'},head:{none:'ไม่สวม',flower:'ดอกจำปี',ribbon:'โบผูกผม',crown:'กระบังจันทร์',cat:'หูแมวภูติ'}};
   const appearanceDefaults={gender:'female',face:'bright',hair:'tails',head:'flower',outfit:'ranger',skinColor:'#f4c6a2',hairColor:'#62405c',outfitColor:'#688f83',accentColor:'#efc775',headColor:'#f4a7c4'};
   function appearance(p){return {...appearanceDefaults,...p.appearance,outfit:p.outfit||p.appearance?.outfit||'ranger'};}
   function validateAppearance(value){

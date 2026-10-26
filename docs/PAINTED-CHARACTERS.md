@@ -1,6 +1,6 @@
 # Painted character production
 
-Generated with the native image_gen tool, using the user-supplied purple-haired Thai fantasy NPC as the visual reference. Original PNG files and their alpha channels are preserved. There are 140 generated headless bodies across four atlases, of which 100 are used by the gender-specific catalog; the world-fashion designs supersede four rows of the first pair. Fourteen additional parts provide six faces, four hairstyles and four head accessories.
+Generated with the native image_gen tool, using the user-supplied purple-haired Thai fantasy NPC as the visual reference. Original PNG files and their alpha channels are preserved. There are 160 generated headless bodies across six atlases, of which 120 are used by the gender-specific catalog; the world-fashion designs supersede four rows of the first pair. Additional parts provide sixteen faces (eight per gender), twelve hairstyles and four head accessories.
 
 | Source atlas | Exact generation prompt |
 |---|---|
@@ -8,6 +8,10 @@ Generated with the native image_gen tool, using the user-supplied purple-haired 
 | [Female fantasy](../assets/sprites/npc-style-female.png) | [Prompt](../assets/sprites/npc-style-female.prompt.txt) |
 | [Male world fashion](../assets/sprites/npc-style-male-world.png) | [Prompt](../assets/sprites/npc-style-male-world.prompt.txt) |
 | [Female world fashion](../assets/sprites/npc-style-female-world.png) | [Prompt](../assets/sprites/npc-style-female-world.prompt.txt) |
+| [Male casual/leisure](../assets/sprites/npc-style-male-extra.png) | [Prompt](../assets/sprites/npc-style-male-extra.prompt.txt) |
+| [Female casual/leisure](../assets/sprites/npc-style-female-extra.png) | [Prompt](../assets/sprites/npc-style-female-extra.prompt.txt) |
+| [Five new faces per gender](../assets/sprites/npc-style-faces-extra.png) | [Prompt](../assets/sprites/npc-style-faces-extra.prompt.txt) |
+| [Eight new hairstyles](../assets/sprites/npc-style-hair-extra.png) | [Prompt](../assets/sprites/npc-style-hair-extra.prompt.txt) |
 | [Faces, hair and accessories](../assets/sprites/npc-style-headparts.png) | [Prompt](../assets/sprites/npc-style-headparts.prompt.txt) |
 
 The read-only source indexer `scripts/index-character-sprites.py` requires Pillow and NumPy and writes `sprite-character-data.js`. For all body silhouettes it follows connected opaque components and records per-row extents, so neighbouring skirt hems do not appear in another outfit. It also records compact exposed-skin regions from source color components and body location, keeping warm ivory cloth out of skin dye. This does not modify any source image. The game itself needs no Python or additional dependencies.
@@ -26,6 +30,8 @@ General garment shapes informed original, unbranded designs: suit lapels and dou
 
 ## Validation and limits
 
-Twenty-three automated tests cover gameplay, queue/lifecycle behavior, surrender and room membership, plus 100 unique IDs and palettes, 50 outfits per gender, source PNG dimensions and crop bounds, silhouette spans, dye channel isolation, neutral/eye preservation, extreme color values, server-side validation and persistence. Browser inspection covered male football, female runway, preset reset, custom dye after refresh and a solo move/shot with the saved character. Responsive layout is checked at 390px. Physical phones, low-memory mobile GPU behavior and every possible combination of colors/parts are not exhaustively tested. The five uncompressed source atlases total approximately 13 MB before browser caching.
+Twenty-four automated tests cover gameplay, queue/lifecycle behavior, surrender and room membership, plus 120 unique IDs and palettes, 60 outfits per gender, source PNG dimensions and crop bounds, silhouette spans, dye channel isolation, neutral/eye preservation, extreme color values, server-side validation and persistence. Browser inspection covered male football, female runway, preset reset, custom dye after refresh and a solo move/shot with the saved character. Responsive layout is checked at 390px. Physical phones, low-memory mobile GPU behavior and every possible combination of colors/parts are not exhaustively tested. The nine source PNG atlases total approximately 22.5 MB before browser caching.
 
 The review on 2026-10-27 rendered all 100 outfits and a 32-frame crown/long-hair/wide-dress sheet in the browser without render errors. Additional browser checks covered dark skin without ivory-skirt recoloring, reselecting a dyed outfit, purchase/equip/enhancement with matching combat HP, and battle portrait readiness. Production dependencies reported no known vulnerabilities in the package-manager audit. This is a bounded review of the current alpha, not a security certification or high-concurrency benchmark.
+
+New hairstyles use calibrated placement rectangles against the existing face anchor. Face and hair option thumbnails render the actual painted parts and refresh when their dye changes. The eight expression choices are bright, calm, joyful, wink, confident, shy, surprised and sleepy. The twelve hairstyle IDs retain the original four and add spike, curtain, curl, blunt, pony, buns, braid and layered. Source indexing uses metadata-only separator columns where adjacent outlines touch.

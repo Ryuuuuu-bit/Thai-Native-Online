@@ -14,9 +14,10 @@ def frame(alpha, box):
     if not len(xs): raise ValueError(f'Empty sprite cell: {box}')
     return dict(x=int(x0+xs.min()),y=int(y0+ys.min()),w=int(xs.max()-xs.min()+1),h=int(ys.max()-ys.min()+1))
 
-def separate_bodies(alpha, row_count):
+def separate_bodies(alpha, row_count, columns=5, separators=()):
     # Wide hems overlap rectangular cells; index connected silhouettes instead of cutting skirts.
     mask=alpha>128; components=[]
+    for x in separators:mask[:,x]=False
     for y,x in zip(*np.where(mask)):
         if not mask[y,x]: continue
         queue=[(int(x),int(y))];mask[y,x]=False
@@ -33,9 +34,9 @@ def separate_bodies(alpha, row_count):
                 spans[row-y0][0]=min(spans[row-y0][0],max(0,px-x0-2))
                 spans[row-y0][1]=max(spans[row-y0][1],min(x1-x0,px-x0+3))
         components.append(dict(x=x0,y=y0,w=x1-x0,h=y1-y0,spans=spans))
-    assert len(components)==row_count*5, f'Expected {row_count*5} complete bodies, found {len(components)}'
+    assert len(components)==row_count*columns, f'Expected {row_count*columns} complete parts, found {len(components)}: {[(f["x"],f["y"],f["w"],f["h"]) for f in components]}'
     ordered=sorted(components,key=lambda f:f['y']+f['h']/2)
-    return [f for row in range(row_count) for f in sorted(ordered[row*5:row*5+5],key=lambda f:f['x']+f['w']/2)]
+    return [f for row in range(row_count) for f in sorted(ordered[row*columns:row*columns+columns],key=lambda f:f['x']+f['w']/2)]
 
 def skin_regions(image, f):
     pixels=np.array(image)[f['y']:f['y']+f['h'],f['x']:f['x']+f['w']]
@@ -58,7 +59,8 @@ def skin_regions(image, f):
         skin_tone=h[ys,xs].mean()<32 and (.17 if neck else .21)<s[ys,xs].mean()<.55 and v[ys,xs].mean()>.85
         arm=bottom<.66 and (left<.25 or right>.74) and right-left<.43 and bottom-top<.43
         leg=top>.54 and .2<cx<.8 and right-left<.23 and bottom-top<.3
-        if skin_tone and (neck or arm or leg):regions.append([max(0,min(xs)-2),max(0,min(ys)-2),min(f['w'],max(xs)+3),min(f['h'],max(ys)+3)])
+        torso=.26<top<.55 and bottom<.64 and .35<cx<.65 and right-left<.45 and bottom-top<.2
+        if skin_tone and (neck or arm or leg or torso):regions.append([max(0,min(xs)-2),max(0,min(ys)-2),min(f['w'],max(xs)+3),min(f['h'],max(ys)+3)])
     return regions
 
 for gender in ['male','female']:
@@ -76,6 +78,24 @@ for gender in ['male','female']:
     frames={f'{gender}-{theme}-{col+1}':bodies[row*5+col] for row,theme in enumerate(['royal','academy','sea','craft']) for col in range(5)}
     for f in frames.values():f['skin']=skin_regions(im,f)
     data['sheets'][gender+'-world']=dict(image=name,width=im.width,height=im.height,frames=frames)
+
+for gender in ['male','female']:
+    name=f'assets/sprites/npc-style-{gender}-extra.png'
+    # A metadata-only separator isolates the touching male mechanic and chef hand outlines.
+    im=Image.open(ROOT/name).convert('RGBA');alpha=np.array(im)[:,:,3];bodies=separate_bodies(alpha,2,separators=[625] if gender=='male' else [])
+    frames={f'{gender}-{theme}-{col+1}':bodies[row*5+col] for row,theme in enumerate(['urban','journey']) for col in range(5)}
+    for f in frames.values():f['skin']=skin_regions(im,f)
+    data['sheets'][gender+'-extra']=dict(image=name,width=im.width,height=im.height,frames=frames)
+
+name='assets/sprites/npc-style-faces-extra.png'
+im=Image.open(ROOT/name).convert('RGBA');faces=separate_bodies(np.array(im)[:,:,3],2)
+data['sheets']['faces-extra']=dict(image=name,width=im.width,height=im.height,frames={f'{gender}-{expression}':faces[row*5+col] for row,gender in enumerate(['female','male']) for col,expression in enumerate(['wink','confident','shy','surprised','sleepy'])})
+
+name='assets/sprites/npc-style-hair-extra.png'
+im=Image.open(ROOT/name).convert('RGBA');hair=separate_bodies(np.array(im)[:,:,3],2,4)
+placements=[[20,4,216,172],[26,4,204,172],[20,4,216,172],[28,4,200,172],[16,4,224,222],[20,4,216,180],[22,4,212,230],[24,4,208,228]]
+frames={key:{**hair[i],'placement':placements[i]} for i,key in enumerate(['spike','curtain','curl','blunt','pony','buns','braid','layered'])}
+data['sheets']['hair-extra']=dict(image=name,width=im.width,height=im.height,frames=frames)
 
 name='assets/sprites/npc-style-headparts.png'
 im=Image.open(ROOT/name).convert('RGBA');alpha=np.array(im)[:,:,3]
