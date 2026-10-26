@@ -1,4 +1,4 @@
-(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory();else root.NativeRPG=factory();})(typeof globalThis!=='undefined'?globalThis:this,()=>{
+(function(root,factory){if(typeof module==='object'&&module.exports)module.exports=factory(require('./fashion-catalog.js'));else root.NativeRPG=factory(root.NativeFashion);})(typeof globalThis!=='undefined'?globalThis:this,F=>{
   'use strict';
   const gear=[
     {id:'talisman',slot:'weapon',name:'ยันต์จันทร์เสี้ยว',icon:'✦',attack:54,cost:0,desc:'อาคมสมดุล เหมาะกับการฝึกยิง'},
@@ -9,21 +9,21 @@
     {id:'thread',slot:'charm',name:'สายสิญจน์ข้อมือ',icon:'∞',hp:20,cost:0,desc:'พลังชีวิต +20'},
     {id:'moon',slot:'charm',name:'จี้จันทรา',icon:'☽',hp:50,cost:400,desc:'พลังชีวิต +50'}
   ];
-  const outfits=[{id:'ranger',name:'นักเดินทางพงไพร',art:'guide',cost:0},{id:'medium',name:'ผู้ใช้มนตร์จันทรา',art:'medium',cost:0},{id:'jade',name:'ผู้พิทักษ์หยก',art:'guide',cost:300,tint:0x80efd4}];
+  const outfits=[{id:'ranger',name:'นักเดินทางพงไพร',art:'guide',cost:0},{id:'medium',name:'ผู้ใช้มนตร์จันทรา',art:'medium',cost:0},{id:'jade',name:'ผู้พิทักษ์หยก',art:'guide',cost:300,tint:0x80efd4},...F.outfits];
   const appearanceOptions={gender:{male:'ชาย',female:'หญิง'},face:{bright:'ตากลมสดใส',calm:'สุขุมนุ่มนวล',joy:'ยิ้มแย้ม'},hair:{crop:'ผมสั้นซอย',bob:'บ๊อบมน',tails:'แกละคู่',long:'ผมยาว'},head:{none:'ไม่สวม',flower:'ดอกจำปี',ribbon:'โบผูกผม',crown:'กระบังจันทร์',cat:'หูแมวภูติ'}};
   const appearanceDefaults={gender:'female',face:'bright',hair:'tails',head:'flower',outfit:'ranger',skinColor:'#f4c6a2',hairColor:'#62405c',outfitColor:'#688f83',accentColor:'#efc775',headColor:'#f4a7c4'};
   function appearance(p){return {...appearanceDefaults,...p.appearance,outfit:p.outfit||p.appearance?.outfit||'ranger'};}
   function validateAppearance(value){
     if(!value||typeof value!=='object'||Array.isArray(value))throw Error('รูปลักษณ์ไม่ถูกต้อง');
     const clean={};for(const [key,choices] of Object.entries(appearanceOptions)){if(!Object.hasOwn(choices,value[key]))throw Error('ตัวเลือกรูปลักษณ์ไม่ถูกต้อง');clean[key]=value[key];}
-    if(!outfits.some(o=>o.id===value.outfit))throw Error('ไม่พบชุด');clean.outfit=value.outfit;
+    const outfit=outfits.find(o=>o.id===value.outfit);if(!outfit)throw Error('ไม่พบชุด');if(outfit.gender&&outfit.gender!==clean.gender)throw Error('ชุดไม่ตรงกับตัวละครชายหรือหญิง');clean.outfit=value.outfit;
     for(const key of ['skinColor','hairColor','outfitColor','accentColor','headColor']){if(typeof value[key]!=='string'||!/^#[0-9a-f]{6}$/i.test(value[key]))throw Error('สีต้องเป็นรหัส HEX 6 หลัก');clean[key]=value[key].toLowerCase();}
     return clean;
   }
   function customize(p,value,name){
     const next=validateAppearance(value);if(typeof name!=='string'||name.trim().length<2||name.trim().length>18||/[\x00-\x1f<>]/.test(name))throw Error('ใช้ชื่อ 2–18 ตัวอักษร');
     // Validate the entire draft before spending coins or changing the saved character.
-    transact(p,'outfit',next.outfit);p.appearance=next;p.name=name.trim();p.characterCreated=true;return 'บันทึกตัวละครแล้ว';
+    wearOutfit(p,next.outfit,next.gender);p.appearance=next;p.name=name.trim();p.characterCreated=true;return 'บันทึกตัวละครแล้ว';
   }
   const stages=[{id:'grove',name:'ป่าโคมวิญญาณ',subtitle:'บทที่ ๑ · เสียงกระซิบใต้แสงจันทร์',hp:155,enemies:1,attack:33,gold:180,stones:3,xp:65},{id:'shrine',name:'ศาลร้างจันทรา',subtitle:'บทที่ ๒ · ผู้เฝ้าศาลโบราณ',hp:190,enemies:2,attack:39,gold:280,stones:4,xp:95},{id:'eclipse',name:'ราชันเงาจันทร์',subtitle:'บทที่ ๓ · บททดสอบผู้ผูกวิญญาณ',hp:340,enemies:1,attack:53,gold:380,stones:6,xp:140}];
   const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
@@ -37,9 +37,10 @@
     if(action==='buy') {if(!g||!g.cost||p.owned.includes(id))throw Error('ซื้อรายการนี้ไม่ได้');if(p.gold<g.cost)throw Error('เหรียญไม่เพียงพอ');p.gold-=g.cost;p.owned.push(id);return 'ซื้อ '+g.name+' แล้ว';}
     if(action==='equip'){if(!g||!p.owned.includes(id))throw Error('ยังไม่มีอุปกรณ์นี้');p.equipment[g.slot]=id;return 'สวมใส่ '+g.name+' แล้ว';}
     if(action==='upgrade'){if(!g||g.slot!=='weapon'||!p.owned.includes(id))throw Error('เลือกอาวุธที่มีอยู่ก่อน');const c=upgradeCost(p,id);if(c.level>=5)throw Error('อาวุธถึงระดับสูงสุด +5 แล้ว');if(p.gold<c.gold||p.stones<c.stones)throw Error('เหรียญหรือหินตีบวกไม่เพียงพอ');p.gold-=c.gold;p.stones-=c.stones;const success=random()<c.chance;if(success)p.upgrades[id]=c.level+1;return success?`ตีบวกสำเร็จ! ${g.name} +${c.level+1}`:'ตีบวกไม่สำเร็จ ระดับอาวุธยังเท่าเดิม';}
-    if(action==='outfit'){const o=outfits.find(o=>o.id===id);if(!o)throw Error('ไม่พบชุด');if(!p.outfits.includes(id)){if(p.gold<o.cost)throw Error('เหรียญไม่เพียงพอ');p.gold-=o.cost;p.outfits.push(id);}p.outfit=id;return 'เปลี่ยนเป็น '+o.name+' แล้ว';}
+    if(action==='outfit')return wearOutfit(p,id,appearance(p).gender);
     throw Error('ไม่รู้จักคำสั่ง');
   }
+  function wearOutfit(p,id,gender){const o=outfits.find(o=>o.id===id);if(!o)throw Error('ไม่พบชุด');if(o.gender&&o.gender!==gender)throw Error('ชุดไม่ตรงกับตัวละครชายหรือหญิง');if(!p.outfits.includes(id)){if(p.gold<o.cost)throw Error('เหรียญไม่เพียงพอ');p.gold-=o.cost;p.outfits.push(id);}p.outfit=id;if(p.appearance)p.appearance.outfit=id;if(o.gender){p.appearance={...appearance(p),gender};p.characterCreated=true;}return 'เปลี่ยนเป็น '+o.name+' แล้ว';}
   function terrain(){return Array.from({length:241},(_,i)=>492+Math.sin(i/29)*13+Math.cos(i/13)*5);}
   function ground(t,x){const index=clamp(x/5,0,240),i=Math.floor(index);return t[i]+((t[Math.min(i+1,240)]-t[i])*(index-i));}
   function trajectory(room,actor,angle,power){
@@ -81,5 +82,5 @@
   }
   function move(room,id,direction){const a=active(room);if(room.phase!=='aim'||a.id!==id||![-1,1].includes(direction)||a.moves>=2)throw Error('ขยับไม่ได้แล้วในตานี้');const x=clamp(a.x+direction*40,70,1130);if(room.actors.some(b=>b.id!==id&&b.hp>0&&Math.abs(b.x-x)<65))throw Error('มีตัวละครขวางอยู่');a.x=x;a.moves++;room.revision++;}
   function botAim(room){const a=active(room),targets=room.actors.filter(b=>b.hp>0&&b.team!==a.team);let best={distance:Infinity,angle:45,power:60};for(let angle=25;angle<=75;angle+=5)for(let power=30;power<=100;power+=3){const shot=trajectory(room,a,angle,power);const distance=Math.min(...targets.map(t=>Math.hypot(t.x-shot.impact.x,ground(room.terrain,t.x)-25-shot.impact.y)));if(distance<best.distance)best={distance,angle,power};}return best;}
-  return {gear,outfits,appearanceOptions,appearanceDefaults,appearance,validateAppearance,customize,stages,clamp,item,level,profile,stats,upgradeCost,transact,terrain,ground,trajectory,createRoom,active,shoot,next,move,botAim};
+  return {gear,outfits,fashionCategories:F.categories,appearanceOptions,appearanceDefaults,appearance,validateAppearance,customize,stages,clamp,item,level,profile,stats,upgradeCost,transact,terrain,ground,trajectory,createRoom,active,shoot,next,move,botAim};
 });

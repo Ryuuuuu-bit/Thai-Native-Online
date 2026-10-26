@@ -60,10 +60,9 @@
     customCharacter(view,appearance){
       const signature=JSON.stringify(appearance);let entry=this.characterTextures.get(signature);
       if(!entry){
-        const key='custom'+this.characterTextures.size;entry={key,ready:new Promise((resolve,reject)=>{
-          const image=new Image();image.onload=()=>{if(!this.sys.isActive())return resolve(false);const texture=this.textures.addImage(key+'Sheet',image);
-            NativeCharacter.actions.forEach((action,row)=>{for(let frame=0;frame<4;frame++)texture.add(action+'-'+frame,0,frame*256,row*320,256,320);this.anims.create({key:key+'-'+action,frames:Array.from({length:4},(_,f)=>({key:key+'Sheet',frame:action+'-'+f})),frameRate:action==='idle'?4:action==='cast'?12:8,repeat:['idle','move','aim','guard'].includes(action)?-1:0});});resolve(true);};
-          image.onerror=()=>reject(Error('โหลดรูปลักษณ์ไม่สำเร็จ'));image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(NativeCharacter.sheet(appearance));
+        const key='custom'+this.characterTextures.size;entry={key,ready:NativePaintedCharacter.ready.then(()=>{
+          if(!this.sys.isActive())return false;const texture=this.textures.addCanvas(key+'Sheet',NativePaintedCharacter.textureSheet(appearance));
+          NativeCharacter.actions.forEach((action,row)=>{for(let frame=0;frame<4;frame++)texture.add(action+'-'+frame,0,frame*256,row*320,256,320);this.anims.create({key:key+'-'+action,frames:Array.from({length:4},(_,f)=>({key:key+'Sheet',frame:action+'-'+f})),frameRate:action==='idle'?4:action==='cast'?12:8,repeat:['idle','move','aim','guard'].includes(action)?-1:0});});return true;
         })};this.characterTextures.set(signature,entry);
       }
       entry.ready.then(ok=>{if(!ok||!view.sprite.scene)return;this.tweens.killTweensOf(view.sprite);view.sprite.setTexture(entry.key+'Sheet','idle-0').setScale(view.height/320).setY(-4).setAngle(0).setVisible(true);view.baseX=view.sprite.scaleX;view.baseY=view.sprite.scaleY;view.animated=true;view.sheetKey=entry.key;this.idle(view);updateAim();}).catch(()=>{if(view.sprite.scene){view.sprite.setVisible(true);this.idle(view);}C.toast('โหลดรูปลักษณ์ไม่สำเร็จ กรุณารีเฟรช');});

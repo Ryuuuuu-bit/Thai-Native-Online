@@ -42,3 +42,9 @@ The player can now choose gender, face, hair, head accessory, outfit and five in
 Both genders may use all options. The previous three outfits retain their ownership and pricing, and appearance is separate from combat equipment. New guests are offered creation; existing guests retain their original appearance until explicitly saving. Customized medium characters use the new action sheet; legacy medium characters retain the earlier whole-image fallback described above. NPC, enemy, item and scene assets are unchanged.
 
 Validated with thirteen automated tests, a fresh guest creation/save/reload, color changes and reset, equipment preview, a live solo movement/shot, and the responsive creator at 390px width. No physical-device or high-concurrency benchmark was run.
+
+## Painted fashion expansion
+
+The current browser renderer uses generated raster parts in the NPC art style, superseding the earlier vector character described above. There are 50 male and 50 female outfits, ten categories, varied preset palettes and selective custom dye. Suits, football, basketball and runway designs use dedicated world-fashion atlases. The original costumes remain available, with saved ownership and prices preserved.
+
+See [production sources, exact prompts and limits](PAINTED-CHARACTERS.md) and [all designs](FASHION-CATALOG.md). Eighteen automated tests pass, including source-frame bounds, dye behavior, catalog/gender validation and persistent multiplayer appearance.
