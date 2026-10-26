@@ -15,3 +15,4 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline:3px solid #b2
 @media(prefers-reduced-motion:reduce){.item-slot:hover,.gold-button:hover{transform:none}.item-slot,.gold-button{transition:none}}
 #npc-dialog{scrollbar-width:thin;scrollbar-color:#8a6e8a #242034}#npc-dialog .dialog-close{position:sticky;float:right;top:0;right:0;z-index:5;margin:0 0 -40px auto;background:#30283fee}
 .bottom-nav .nav-item>span>.item-artwork{width:30px;height:30px}.bottom-nav .nav-item>span{position:relative}.bottom-nav .nav-item>span>i{position:absolute;top:-3px;right:-8px}.wallet .currency .coin-icon,.wallet .currency .ticket-icon{display:inline-flex;width:27px;height:27px;align-items:center}
+.character-display>img.jade{filter:hue-rotate(30deg) saturate(.8) drop-shadow(0 12px 8px #0004)}
