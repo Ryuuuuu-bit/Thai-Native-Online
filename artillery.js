@@ -9,7 +9,7 @@
   let reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   try{const setting=localStorage.getItem('thainative-motion');if(setting!==null)reduced=setting!=='on';}catch{}
   class Arena extends Phaser.Scene {
-    constructor(){super('arena');this.actors=new Map();}
+    constructor(){super('arena');this.actors=new Map();this.characterTextures=new Map();}
     preload(){const label=this.add.text(600,300,'กำลังเปิดประตูสู่ป่าจันทรา…',{fontFamily:'sans-serif',fontSize:'20px',color:'#e8d2a0'}).setOrigin(.5);this.load.on('progress',n=>label.setText('กำลังเตรียมสนาม '+Math.round(n*100)+'%'));this.load.on('loaderror',()=>C.toast('โหลดภาพไม่สำเร็จ กรุณารีเฟรชหน้า'));for(const [key,url] of Object.entries(assets))this.load.image(key,url);}
     create(){
       this.children.removeAll();scene=this;NativeSprites.install(this,A);
@@ -35,11 +35,11 @@
       this.edges.lineStyle(1,0xd8c886,.55);this.edges.beginPath();room.terrain.forEach((y,i)=>i?this.edges.lineTo(i*5,y-2):this.edges.moveTo(0,y-2));this.edges.strokePath();
       for(const actor of room.actors){let view=this.actors.get(actor.id);if(!view){
         const art=actor.bot?'enemy':actor.outfit==='medium'?'medium':'guide';
-        const animated=art!=='medium',sheetKey=art==='enemy'?'enemy':'guide';
-        const sprite=animated?this.add.sprite(0,-4,sheetKey+'Sheet','idle-0').setOrigin(.5,1):this.add.image(0,-4,art).setOrigin(.5,1);
+        const animated=!actor.appearance&&art!=='medium',sheetKey=art==='enemy'?'enemy':'guide';
+        const sprite=animated?this.add.sprite(0,-4,sheetKey+'Sheet','idle-0').setOrigin(.5,1):this.add.sprite(0,-4,art).setOrigin(.5,1);
         const image=this.textures.get(art).getSourceImage(),height=actor.bot&&room.stage==='eclipse'?138:112;
         if(animated)sprite.setScale(height/A[sheetKey].baseHeight);else sprite.setDisplaySize(height*image.width/image.height,height);
-        if(actor.outfit==='jade')sprite.setTint(0x9ee3bc);
+        if(!actor.appearance&&actor.outfit==='jade')sprite.setTint(0x9ee3bc);
         const shadow=this.add.ellipse(0,0,55,10,0x0b1420,.5);
         const shield=this.add.ellipse(0,-48,95,120,0x89ddf1,.08).setStrokeStyle(2,0xa6eff1,.65).setVisible(false);
         const sigil=this.add.ellipse(0,0,66,15,0xffe0a0,.08).setStrokeStyle(1,0xffe0a0,.65);
@@ -47,7 +47,7 @@
         const hp=this.add.text(0,-height-12,'',{fontFamily:'sans-serif',fontSize:'10px',color:'#fff1d2',stroke:'#162335',strokeThickness:3}).setOrigin(.5);
         const marker=this.add.text(0,-height-60,'▼',{fontFamily:'sans-serif',fontSize:'20px',color:'#ffe6a1'}).setOrigin(.5);
         const container=this.add.container(actor.x,G.ground(room.terrain,actor.x),[shadow,sigil,sprite,shield,bar,name,hp,marker]).setDepth(4);view={container,sprite,bar,name,hp,marker,height,shield,sigil,baseX:sprite.scaleX,baseY:sprite.scaleY,alive:true,lastShield:0,animated,sheetKey,action:'',motionToken:0};this.actors.set(actor.id,view);
-        this.idle(view);
+        if(actor.appearance){view.sprite.setVisible(false);this.customCharacter(view,actor.appearance);}else this.idle(view);
       }
         const y=G.ground(room.terrain,actor.x),moving=Math.abs(view.container.x-actor.x)>1||Math.abs(view.container.y-y)>1;
         if(moving){this.pose(view,'move');this.tweens.add({targets:view.container,x:actor.x,y,duration:reduced?0:330,ease:'Sine.easeOut',onComplete:()=>this.pose(view,actor.hp<=0?'defeat':actor.shield?'guard':'idle')});}
@@ -56,6 +56,17 @@
         if(actor.hp<=0&&view.alive){view.alive=false;this.tweens.killTweensOf(view.sprite);if(view.animated)this.pose(view,'defeat');else this.tweens.add({targets:view.sprite,angle:actor.facing*22,y:4,scaleY:view.baseY*.85,duration:350,ease:'Sine.easeOut'});this.pulse(actor.x,y-40,0xc6a5ef,35);}
         view.bar.clear();view.bar.fillStyle(0x122231,.95);view.bar.fillRoundedRect(-42,-view.height-6,84,7,3);view.bar.fillStyle(actor.team===me()?.team?0x90d4a7:0xdf8a88);view.bar.fillRoundedRect(-41,-view.height-5,82*Math.max(0,actor.hp/actor.maxHp),5,2);view.hp.setText(Math.ceil(actor.hp)+' / '+Math.ceil(actor.maxHp));
       }updateAim();
+    }
+    customCharacter(view,appearance){
+      const signature=JSON.stringify(appearance);let entry=this.characterTextures.get(signature);
+      if(!entry){
+        const key='custom'+this.characterTextures.size;entry={key,ready:new Promise((resolve,reject)=>{
+          const image=new Image();image.onload=()=>{if(!this.sys.isActive())return resolve(false);const texture=this.textures.addImage(key+'Sheet',image);
+            NativeCharacter.actions.forEach((action,row)=>{for(let frame=0;frame<4;frame++)texture.add(action+'-'+frame,0,frame*256,row*320,256,320);this.anims.create({key:key+'-'+action,frames:Array.from({length:4},(_,f)=>({key:key+'Sheet',frame:action+'-'+f})),frameRate:action==='idle'?4:action==='cast'?12:8,repeat:['idle','move','aim','guard'].includes(action)?-1:0});});resolve(true);};
+          image.onerror=()=>reject(Error('โหลดรูปลักษณ์ไม่สำเร็จ'));image.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(NativeCharacter.sheet(appearance));
+        })};this.characterTextures.set(signature,entry);
+      }
+      entry.ready.then(ok=>{if(!ok||!view.sprite.scene)return;this.tweens.killTweensOf(view.sprite);view.sprite.setTexture(entry.key+'Sheet','idle-0').setScale(view.height/320).setY(-4).setAngle(0).setVisible(true);view.baseX=view.sprite.scaleX;view.baseY=view.sprite.scaleY;view.animated=true;view.sheetKey=entry.key;this.idle(view);updateAim();}).catch(()=>{if(view.sprite.scene){view.sprite.setVisible(true);this.idle(view);}C.toast('โหลดรูปลักษณ์ไม่สำเร็จ กรุณารีเฟรช');});
     }
     idle(view){if(view.animated){this.pose(view,view.alive?'idle':'defeat');return;}if(reduced||!view.alive)return;this.tweens.add({targets:view.sprite,y:-6,angle:.6,duration:1900+Math.random()*700,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});}
     pose(view,name,restore=false){
@@ -88,7 +99,7 @@
     $('turn-badge').classList.toggle('my-turn',!!isMine);$('wind-value').textContent=(room.wind<0?'← ':'→ ')+Math.abs(room.wind);$('round-value').textContent='รอบ '+room.round;
     const turnKey=room.id+':'+room.round+':'+room.turn;if(room.phase==='aim'&&lastTurn!==turnKey){lastTurn=turnKey;const banner=$('turn-announcement');banner.textContent=isMine?'ถึงตาคุณแล้ว ✦':`ตาของ ${current.name}`;banner.classList.remove('show');void banner.offsetWidth;banner.classList.add('show');}
     $('arena-hint').textContent=isMine?(room.mode==='pvp'?'เล็งมุม · ปรับแรง · กด SPACE เพื่อยิง':'เส้นประแสดงวิถีกระสุน · วงกลมคือจุดตกโดยประมาณ'):room.phase==='flight'?'รอดูผลการยิง…':'ดูทิศลมและวางแผนสำหรับตาถัดไป';
-    if(a){$('hero-name').textContent=a.name;$('hero-health').textContent=Math.ceil(a.hp)+' / '+Math.ceil(a.maxHp);$('hero-hp').max=a.maxHp;$('hero-hp').value=a.hp;$('hero-energy').textContent=a.energy;$('hero-portrait').src=assets[a.outfit==='medium'?'medium':'guide'];$('face').textContent=a.facing===1?'ยิงไปทาง →':'← ยิงไปทาง';$('moves-left').textContent='ขยับได้ '+(2-a.moves)+' ครั้ง';}
+    if(a){$('hero-name').textContent=a.name;$('hero-health').textContent=Math.ceil(a.hp)+' / '+Math.ceil(a.maxHp);$('hero-hp').max=a.maxHp;$('hero-hp').value=a.hp;$('hero-energy').textContent=a.energy;const portraitKey=JSON.stringify(a.appearance||a.outfit);if($('hero-portrait').dataset.look!==portraitKey){$('hero-portrait').dataset.look=portraitKey;$('hero-portrait').src=a.appearance?NativeCharacter.uri(a.appearance):assets[a.outfit==='medium'?'medium':'guide'];$('hero-portrait').classList.toggle('custom-character',!!a.appearance);}$('face').textContent=a.facing===1?'ยิงไปทาง →':'← ยิงไปทาง';$('moves-left').textContent='ขยับได้ '+(2-a.moves)+' ครั้ง';}
     for(const id of ['angle','power','face','guard','fire'])$(id).disabled=!isMine;
     for(const id of ['move-left','move-right'])$(id).disabled=!isMine||a?.moves>=2;
     document.querySelectorAll('[data-skill]').forEach(button=>{const cost=button.dataset.skill==='normal'?0:button.dataset.skill==='burst'?30:45;button.disabled=!isMine||a.energy<cost;button.classList.toggle('selected',button.dataset.skill===skill);});
@@ -118,7 +129,7 @@
       if(!reduced)scene.cameras.main.shake(140,.003);
       for(let i=0;i<14;i++){const spark=scene.add.circle(x,y,2+i%3,color).setDepth(10),r=i*Math.PI*2/14;scene.tweens.add({targets:spark,x:x+Math.cos(r)*65,y:y+Math.sin(r)*45-20,alpha:0,duration:450+i*15,onComplete:()=>spark.destroy()});}
       scene.pulse(x,y,color,flight.skill==='burst'?110:65);
-      for(const hit of flight.damage){const actor=room.actors.find(a=>a.id===hit.id),target=scene.actors.get(hit.id);scene.number(actor,'−'+hit.amount);if(target&&actor.hp>0){scene.pose(target,'hit',true);scene.effect('hit',actor.x,G.ground(room.terrain,actor.x)-60,95);target.sprite.setTintFill(0xffe6cf);scene.time.delayedCall(120,()=>{target.sprite.clearTint();if(actor.outfit==='jade')target.sprite.setTint(0x9ee3bc);});if(!reduced&&!target.animated)scene.tweens.add({targets:target.sprite,angle:caster.facing*13,duration:90,yoyo:true,repeat:1});}}
+      for(const hit of flight.damage){const actor=room.actors.find(a=>a.id===hit.id),target=scene.actors.get(hit.id);scene.number(actor,'−'+hit.amount);if(target&&actor.hp>0){scene.pose(target,'hit',true);scene.effect('hit',actor.x,G.ground(room.terrain,actor.x)-60,95);target.sprite.setTintFill(0xffe6cf);scene.time.delayedCall(120,()=>{target.sprite.clearTint();if(!actor.appearance&&actor.outfit==='jade')target.sprite.setTint(0x9ee3bc);});if(!reduced&&!target.animated)scene.tweens.add({targets:target.sprite,angle:caster.facing*13,duration:90,yoyo:true,repeat:1});}}
       if(flight.healing){scene.effect('heal',caster.x,G.ground(room.terrain,caster.x)-55,155);scene.number(caster,'+'+flight.healing,'#b3ffda');scene.pulse(caster.x,G.ground(room.terrain,caster.x)-40,0x9ff0ce,65);window.NativeAudio?.play('heal');}
       $('combat-feed').textContent=flight.damage.length?flight.damage.map(h=>`${room.actors.find(a=>a.id===h.id).name} −${h.amount} HP`).join(' · '):'กระสุนพลาดเป้า · ลองปรับแรงหรือมุมในตาถัดไป';
       window.NativeAudio?.play(flight.skill==='burst'?'burst':'impact');hud();if(pendingReward)showReward(pendingReward);

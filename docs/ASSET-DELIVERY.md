@@ -34,3 +34,11 @@ Rarity is presentational catalog metadata in `rpg-ui.js`: C/B/A/S are assigned t
 This is a first animation set, four samples per action (with shared guide guard poses), not a 6–8-frame polished studio animation set. Some AI frame-to-frame costume/hair variation remains. Medium outfit still uses original whole-image motion. Weapon swapping updates combat stats/projectile presentation; the guide's held talisman is not yet a separately rigged weapon.
 
 Items are independently addressable source rectangles rather than sixteen rewritten PNGs. Original source sheet and manifest must travel together. UI supports loading/disconnected and in-flight transaction states; production load testing/account recovery remain outside this asset update.
+
+## Character customization update
+
+The player can now choose gender, face, hair, head accessory, outfit and five independent colors. `character-art.js` is the editable vector source; it generates a shared 256×320 preview and a 1024×2560 runtime sheet with four frames for each of idle, move, aim, cast, hit, guard, victory and defeat. There is no separate exported PNG per combination. Character proportions and clothing parts remain identical across poses. This first modular animation set uses limb rotations and small body offsets; it is not a hand-drawn animation set or skeletal rig.
+
+Both genders may use all options. The previous three outfits retain their ownership and pricing, and appearance is separate from combat equipment. New guests are offered creation; existing guests retain their original appearance until explicitly saving. Customized medium characters use the new action sheet; legacy medium characters retain the earlier whole-image fallback described above. NPC, enemy, item and scene assets are unchanged.
+
+Validated with thirteen automated tests, a fresh guest creation/save/reload, color changes and reset, equipment preview, a live solo movement/shot, and the responsive creator at 390px width. No physical-device or high-concurrency benchmark was run.

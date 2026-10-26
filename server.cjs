@@ -5,6 +5,7 @@ const G=require('./rpg-core.js');
 function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data'),turnMs=35000,botDelay=1600}={}){
   fs.mkdirSync(dataDir,{recursive:true});const savePath=path.join(dataDir,'players.json');
   const profiles=fs.existsSync(savePath)?JSON.parse(fs.readFileSync(savePath,'utf8')):{};
+  // Existing guests keep their progress and original art until they save a custom look.
   const clients=new Map(),rooms=new Map(),queues={pvp:[],coop:[]},history=[],timers=new Set();
   const persist=()=>{fs.writeFileSync(savePath+'.tmp',JSON.stringify(profiles));fs.renameSync(savePath+'.tmp',savePath);};
   const tokenOf=req=>{const token=(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('native_session='))?.slice(15);return /^[a-f0-9]{64}$/.test(token||'')?token:null;};
@@ -71,6 +72,7 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
         const msg=JSON.parse(raw.toString());if(!msg||typeof msg!=='object')throw Error('คำสั่งไม่ถูกต้อง');const r=inRoom(p.id);
         if(msg.type==='chat'){if(typeof msg.text!=='string'||!msg.text.trim()||msg.text.length>180)throw Error('ข้อความยาวได้ไม่เกิน 180 ตัวอักษร');if(Date.now()-c.lastChat<900)throw Error('รอสักครู่ก่อนส่งข้อความถัดไป');c.lastChat=Date.now();const entry={name:p.name,text:msg.text.trim(),time:Date.now()};history.push(entry);if(history.length>40)history.shift();broadcast({type:'chat',entry});return;}
         if(msg.type==='name'){if(r)throw Error('เปลี่ยนชื่อหลังจบการต่อสู้');if(typeof msg.name!=='string'||msg.name.trim().length<2||msg.name.trim().length>18||/[\x00-\x1f<>]/.test(msg.name))throw Error('ใช้ชื่อ 2–18 ตัวอักษร');p.name=msg.name.trim();persist();return send(ws,{type:'profile',profile:p,message:'บันทึกชื่อแล้ว'});}
+        if(msg.type==='character'){if(r||Object.values(queues).some(q=>q.includes(p.id)))throw Error('ปรับตัวละครหลังออกจากการต่อสู้หรือคิว');const message=G.customize(p,msg.appearance,msg.name);persist();return send(ws,{type:'profile',profile:p,message});}
         if(msg.type==='inventory'){if(r)throw Error('จัดอุปกรณ์หลังจบการต่อสู้');const message=G.transact(p,msg.action,msg.id);persist();return send(ws,{type:'profile',profile:p,message});}
         if(msg.type==='cancel'){dequeue(p.id);return send(ws,{type:'queue',mode:null});}
         if(msg.type==='leave'){leave(p.id);return send(ws,{type:'left'});}
