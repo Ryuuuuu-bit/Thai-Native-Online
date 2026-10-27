@@ -1,4 +1,12 @@
-# ThaiNative · คืนปลุกวิญญาณ
+# ThaiNativeOnline · ชีวิตติดกรุง Demo
+
+Open `/life.html` for the single-player Bangkok life-simulation demo. Create a character, choose one of four goals, visit Bangkok landmarks, manage 40 hours per week, and complete 20 weeks. Movement between locations costs two hours; ending a week charges rent and triggers an event. The demo saves automatically in this browser's local storage, separately from the card-game profile. It does not yet support online multiplayer, account/cloud saves, or animated travel.
+
+The city and character illustrations are original generated assets; the high-angle cartoon-map concept is generic and no reference-game assets are included.
+
+## Existing card game
+
+ThaiNative · คืนปลุกวิญญาณ remains available at `/` during the demo.
 
 A playable Thai folklore chibi card game. This replaces the former artillery RPG; its code, wardrobe, forge, dungeon screens and unused assets have been removed. Git commit `f3e3082` retains the former game. The new server leaves existing `data/players.json` untouched and writes separate card profiles to `data/card-players.json`.
 

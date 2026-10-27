@@ -14,6 +14,7 @@ test('real server saves legal decks atomically, matches private PvP, validates t
   const app=createServer({dataDir,botDelay:40,turnMs:10000,disconnectMs:200});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port,peers=[];
   t.after(async()=>{for(const p of peers)p.ws.terminate();await app.close();removeTemp(dataDir,'native-cards-');});
   assert.equal((await (await fetch(base+'/health')).json()).catalog,100);assert.equal((await fetch(base+'/rpg-core.js')).status,404);assert.equal((await fetch(base+'/data/card-players.json')).status,404);assert.equal((await fetch(base+'/card-engine.js')).status,404);assert.equal((await fetch(base+'/battle.html',{redirect:'manual'})).status,302);
+  for(const file of ['life.html','life.css','life-client.js','life-engine.js','assets/life-bangkok.png','assets/life-characters.png']){const response=await fetch(base+'/'+file);assert.equal(response.status,200,file);await response.arrayBuffer();}
   const a=await peer(base),b=await peer(base);peers.push(a,b);
   a.send({type:'starter',id:'water',request:'starter-water-qa'});await a.wait('profile');
   a.send({type:'save',deck:C.starter('water'),name:'นักอาคม',deckName:'สายน้ำ'});assert.equal((await a.wait('profile')).profile.deckName,'สายน้ำ');

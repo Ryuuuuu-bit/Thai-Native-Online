@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#3e294d"><meta name="description" content="ชีวิตติดกรุง เกมจำลองชีวิตในกรุงเทพสุดป่วน">
+  <title>ThaiNativeOnline · ชีวิตติดกรุง</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;500;600;700&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="life.css"><script defer src="life-engine.js"></script><script defer src="life-client.js"></script>
+</head>
+<body>
+  <div class="sky-dots" aria-hidden="true"></div>
+  <header class="topbar"><a href="/life.html" class="brand" aria-label="ThaiNativeOnline ชีวิตติดกรุง"><span class="brand-seal">✿</span><span><b>THAINATIVE<span>ONLINE</span></b><small>ชีวิตติดกรุง · BANGKOK LIFE</small></span></a><div class="top-right"><span class="demo-badge">✦ เล่นฟรี · DEMO</span><button class="sound-button" id="help-button" aria-label="วิธีเล่น" title="วิธีเล่น">?</button></div></header>
+  <main id="app" aria-live="polite"></main>
+  <dialog id="help-dialog" aria-labelledby="help-title"><div class="dialog-head"><h2 id="help-title">มาทำความรู้จักกรุงเทพกัน! ☀</h2><button id="close-help" aria-label="ปิด">×</button></div><p>เลือกสถานที่บนแผนที่ แล้วเลือกกิจกรรมที่อยากทำ ทุกกิจกรรมใช้เวลาในสัปดาห์และอาจเปลี่ยนเงิน พลัง หรือความสุข</p><p>เมื่อพร้อมกด <b>จบสัปดาห์</b> เพื่อจ่ายค่าเช่า พบเหตุการณ์ไม่คาดฝัน และเริ่มสัปดาห์ใหม่ เล่นให้ครบ 20 สัปดาห์เพื่อดูผลลัพธ์ตามเป้าหมายชีวิตของคุณ</p><p class="hint">✿ ระวังพลังหมดและเก็บเงินเผื่อค่าเช่าไว้ด้วยนะ!</p><button class="button primary" id="got-it">เข้าใจแล้ว ไปใช้ชีวิต!</button></dialog>
+  <div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

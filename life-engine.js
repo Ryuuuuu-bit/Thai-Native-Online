@@ -1,0 +1,101 @@
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Life = factory();
+})(typeof globalThis === 'object' ? globalThis : this, function () {
+  'use strict';
+
+  const locations = [
+    { id: 'home', name: 'ห้องเช่า', icon: '🏠', description: 'พักให้หายเหนื่อยก่อนลุยเมือง' },
+    { id: 'market', name: 'เยาวราช', icon: '🍜', description: 'สตรีทฟู้ด ร้านค้า และแฟชัน' },
+    { id: 'office', name: 'สีลม', icon: '🏢', description: 'ย่านออฟฟิศ แลกเวลากับความฝัน' },
+    { id: 'school', name: 'สถาบันสอนวิชา', icon: '📚', description: 'เรียนทักษะเพื่อเปิดโอกาสใหม่' },
+    { id: 'park', name: 'สวนลุมพินี', icon: '🌳', description: 'พักใจและออกไปพบผู้คน' },
+    { id: 'night', name: 'ถนนข้าวสาร', icon: '✨', description: 'สังคม คอนเทนต์ และเรื่องวุ่นวาย' },
+    { id: 'temple', name: 'วัดอรุณ', icon: '🛕', description: 'ชมริมเจ้าพระยาและถ่ายรูป' },
+    { id: 'swing', name: 'เสาชิงช้า', icon: '⛩️', description: 'แวะชมย่านเมืองเก่าและเติมพลัง' },
+    { id: 'victory', name: 'อนุสาวรีย์ชัยสมรภูมิ', icon: '🚏', description: 'ย่านเดินทางและงานพาร์ตไทม์' }
+  ];
+  // Hours exclude the two-hour journey when changing locations.
+  const actions = [
+    { id: 'rest', location: 'home', name: 'นอนพัก', description: 'ชาร์จพลังให้พร้อมลุย', hours: 8, energy: 30, happiness: 4 },
+    { id: 'shop', location: 'market', name: 'ช่วยงานร้านค้า', description: 'รายได้มั่นคง เหนื่อยนิดหน่อย', hours: 10, money: 650, energy: -20, happiness: -3 },
+    { id: 'meal', location: 'market', name: 'กินข้าวแกง', description: 'อิ่มท้อง เติมแรงและกำลังใจ', hours: 4, money: -120, energy: 14, happiness: 9 },
+    { id: 'fashion', location: 'market', name: 'ช้อปแฟชัน', description: 'ได้ของสะสมหนึ่งชิ้นและความสุข', hours: 6, money: -300, happiness: 12, collection: 1 },
+    { id: 'delivery', location: 'office', name: 'รับงานไรเดอร์', description: 'รายได้ดี แต่ใช้แรงเยอะ', hours: 10, money: 900, energy: -30, happiness: -7 },
+    { id: 'officework', location: 'office', name: 'ทำงานออฟฟิศ', description: 'ต้องมีทักษะ 3 ขึ้นไป รายได้สูง', hours: 12, money: 1500, energy: -25, happiness: -5, requiresSkill: 3 },
+    { id: 'study', location: 'school', name: 'เรียนทักษะ', description: 'ลงทุนเรียน เพิ่มทักษะหนึ่งขั้น', hours: 10, money: -350, energy: -12, happiness: 2, skill: 1 },
+    { id: 'park', location: 'park', name: 'เดินเล่นในสวน', description: 'รับลมและเติมความสุข', hours: 6, energy: 10, happiness: 15 },
+    { id: 'social', location: 'night', name: 'เที่ยวกับเพื่อน', description: 'สร้างความสัมพันธ์และคลายเครียด', hours: 6, money: -250, energy: -8, happiness: 18, fame: 1 },
+    { id: 'content', location: 'night', name: 'ทำคอนเทนต์', description: 'สร้างชื่อเสียงพร้อมฝึกทักษะ', hours: 8, money: -150, energy: -15, happiness: 3, skill: 1, fame: 3 },
+    { id: 'templevisit', location: 'temple', name: 'เที่ยวชมวัดอรุณ', description: 'เที่ยวริมแม่น้ำ เก็บภาพและความสุข', hours: 6, money: -100, happiness: 13, fame: 1 },
+    { id: 'swingvisit', location: 'swing', name: 'กินของอร่อยย่านเสาชิงช้า', description: 'เติมแรงพร้อมเดินชมเมืองเก่า', hours: 5, money: -120, energy: 10, happiness: 8 },
+    { id: 'victoryjob', location: 'victory', name: 'ช่วยงานร้านใกล้อนุสาวรีย์', description: 'งานสั้น ๆ ได้เงินระหว่างเดินทาง', hours: 6, money: 400, energy: -12, happiness: -1 }
+  ];
+  const goals = [
+    { id: 'wealth', name: 'เถ้าแก่คนใหม่', description: 'เก็บเงินและพัฒนาทักษะให้พร้อมเปิดกิจการ', metric: 'money', target: 12000 },
+    { id: 'fame', name: 'ดาวค้างฟ้า', description: 'สร้างชื่อเสียงจนคนทั้งเมืองรู้จัก', metric: 'fame', target: 30 },
+    { id: 'balance', name: 'ชีวิตสมดุล', description: 'จบเกมด้วยความสุข 80 พลัง 60 และเงินไม่ติดลบ', metric: 'happiness', target: 80 },
+    { id: 'collection', name: 'นักสะสมแห่งกรุง', description: 'ช้อปแฟชันเก็บเป็นคอลเลกชัน', metric: 'collection', target: 10 }
+  ];
+  const events = [
+    { text: 'ฝนตกหนัก! เปียกเหมือนเพิ่งลงคลอง', energy: -8, happiness: -3 },
+    { text: 'ร้านปากซอยแถมไข่ดาวให้ ใจฟูทั้งวัน', happiness: 8 },
+    { text: 'เจอธนบัตรในกระเป๋ากางเกงตัวเก่า เย้!', money: 200 },
+    { text: 'รถติดจนได้ฟังเพลงโปรดครบทั้งอัลบั้ม', energy: -4, happiness: 3 },
+    { text: 'เพื่อนส่งมีมมาให้ หัวเราะจนลืมรถติด', happiness: 6 },
+    { text: 'เจอโปรส่งฟรี แต่เกือบเผลอกดสั่งของ', money: -100, happiness: 4 },
+    { text: 'น้องแมวประจำซอยมาทัก เพิ่มกำลังใจ', happiness: 10 },
+    { text: 'ข้าวเช้าพิเศษวันนี้เติมพลังให้เต็มที่', energy: 10 }
+  ];
+  const cap = n => Math.max(0, Math.min(100, n));
+  function create(name, goal) {
+    return {
+      name: String(name || '').trim().slice(0, 20) || 'ชาวกรุง',
+      goal: goals.some(g => g.id === goal) ? goal : 'balance',
+      week: 1, hours: 40, money: 2600, energy: 80, happiness: 65,
+      skill: 0, fame: 0, collection: 0, location: 'home',
+      finished: false, event: '', history: ['เริ่มต้นชีวิตใหม่กลางกรุงเทพ!']
+    };
+  }
+  function valid(s) {
+    return !!s && !s.finished && Number.isInteger(s.week) && s.week >= 1 && s.week <= 20 &&
+      Number.isFinite(s.hours) && Number.isFinite(s.money) && Number.isFinite(s.energy) && Number.isFinite(s.happiness) &&
+      Number.isFinite(s.skill) && Number.isFinite(s.fame) && Number.isFinite(s.collection) && Array.isArray(s.history);
+  }
+  function fail(s, error) { return { ok: false, error, state: s }; }
+  function act(s, id) {
+    if (!valid(s)) return fail(s, 'เกมจบแล้วหรือข้อมูลเกมไม่ถูกต้อง');
+    const a = actions.find(x => x.id === id);
+    if (!a) return fail(s, 'ไม่พบกิจกรรมนี้');
+    const travel = s.location === a.location ? 0 : 2;
+    if (s.hours < a.hours + travel) return fail(s, 'เวลาไม่พอ ลองเลือกกิจกรรมอื่นหรือจบสัปดาห์');
+    if ((a.money || 0) < 0 && s.money < -a.money) return fail(s, 'เงินไม่พอ ลองทำงานเก็บเงินก่อน');
+    if ((a.energy || 0) < 0 && s.energy < -a.energy) return fail(s, 'พลังไม่พอ ลองพักหรือกินข้าวก่อน');
+    if (a.requiresSkill && s.skill < a.requiresSkill) return fail(s, `ต้องมีทักษะอย่างน้อย ${a.requiresSkill}`);
+    const next = { ...s, location: a.location, hours: s.hours - a.hours - travel };
+    for (const key of ['money', 'skill', 'fame', 'collection']) next[key] += a[key] || 0;
+    for (const key of ['energy', 'happiness']) next[key] = cap(next[key] + (a[key] || 0));
+    const message = `${a.name}สำเร็จ${travel ? ' · เดินทาง 2 ชม.' : ''}`;
+    next.history = [message, ...s.history].slice(0, 20);
+    return { ok: true, state: next, message };
+  }
+  function endWeek(s, rng = Math.random) {
+    if (!valid(s)) return fail(s, 'เกมจบแล้วหรือข้อมูลเกมไม่ถูกต้อง');
+    const random = Number(rng());
+    const event = events[Math.max(0, Math.min(events.length - 1, Math.floor((Number.isFinite(random) ? random : 0) * events.length)))];
+    const next = { ...s, money: s.money - 500 + (event.money || 0), energy: cap(s.energy + (event.energy || 0)), happiness: cap(s.happiness + (event.happiness || 0)), event: event.text };
+    const message = `สัปดาห์ ${s.week} จบ · ค่าเช่า 500 บาท · ${event.text}`;
+    next.history = [message, ...s.history].slice(0, 20);
+    if (s.week === 20) next.finished = true;
+    else { next.week++; next.hours = 40; }
+    return { ok: true, state: next, message };
+  }
+  function score(s) {
+    const goal = goals.find(g => g.id === s.goal) || goals[2];
+    const progress = Math.max(0, s[goal.metric]);
+    const success = progress >= goal.target && (goal.id !== 'balance' || (s.energy >= 60 && s.money >= 0));
+    const total = Math.max(0, Math.round(progress / goal.target * 100) + Math.round((s.energy + s.happiness) / 4) + s.skill * 2);
+    return { score: total, title: success ? 'พิชิตเป้าหมายชีวิต!' : 'ชีวิตยังมีเรื่องให้ลุ้นต่อ', breakdown: `เป้าหมาย ${progress.toLocaleString('th-TH')} / ${goal.target.toLocaleString('th-TH')}${goal.id === 'balance' ? ' · พลังอย่างน้อย 60 · เงินไม่ติดลบ' : ''}`, success, progress, target: goal.target };
+  }
+  return { create, act, endWeek, score, locations, actions, goals };
+});
