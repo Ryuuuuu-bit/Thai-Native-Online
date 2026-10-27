@@ -82,3 +82,9 @@ Surrendering or disconnecting past the grace period gives no rewards. A teammate
 Added 20 painted garments (ten per gender), ten face parts (five new expressions per gender) and eight hairstyles. There are now 60 outfits per gender, eight selectable faces per gender, twelve shared hairstyles and five existing head-accessory choices. Face and hair buttons show painted previews; color changes update these previews alongside the character. Old saved IDs and dyes remain valid. New outfits are free and retain their own preset palettes.
 
 Four additional source atlases and their exact native image_gen prompts are listed in [painted character production](docs/PAINTED-CHARACTERS.md). Every source PNG remains unchanged; index metadata supplies crop bounds, skin regions and calibrated hair placement. Saved new face/hair/outfit IDs are validated and replicated through the same server and battle compositor.
+
+## Shared interface refresh · 2026-10-27
+
+`ui-theme.css` provides the village, creator, inventory, shop, forge, adventure, matchmaking, combat, results and asset gallery with shared plum, warm gold and jade styling. Larger Thai text, focus outlines, touch targets, reduced motion and mobile safe-area spacing apply across these surfaces. Inventory and adventure menus now have direct routes between game systems; switching is blocked while a save is pending. The creator keeps its editing flow separate, with a sticky mobile save area. Combat shows health on mobile and keeps firing controls below the arena. Outfit changes require pressing Save; the village hint now says so.
+
+Validation: 25 automated tests, local HTTP checks for all three HTML pages and the shared stylesheet, plus the profile/equipment/combat smoke test. Browser visual checks were unavailable during this refresh; mobile layout and actual viewport overlap still need a browser pass.

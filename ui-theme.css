@@ -1,0 +1,298 @@
+/* Shared village, menus and combat skin. Scene and sprite coordinates stay in their own styles. */
+:root {
+  color-scheme: dark;
+  --ui-ink: #201c30;
+  --ui-plum: #393047;
+  --ui-paper: #fff1d9;
+  --ui-gold: #edcb8b;
+  --ui-jade: #a2e0c7;
+  --ui-muted: #d1c2d6;
+  --ui-edge: #c7a97966;
+  --ui-surface: linear-gradient(145deg, #42354e, #272438);
+  --ui-shadow: 0 16px 48px #100e2066;
+}
+body { color: var(--ui-paper); line-height: 1.65; }
+button, input, select, summary, a { -webkit-tap-highlight-color: transparent; }
+button, input, select { font-family: 'Noto Sans Thai', sans-serif; }
+button { transition: background-color .16s, border-color .16s, box-shadow .16s; }
+button:disabled { opacity: .55; cursor: not-allowed; }
+:is(button, a, input, select, summary):focus-visible { outline: 3px solid var(--ui-jade); outline-offset: 3px; }
+input, select { max-width: 100%; }
+input::placeholder { color: #c0adca; opacity: 1; }
+input:not([type=range]):not([type=color]):focus, select:focus { border-color: var(--ui-jade); }
+progress { border: 0; border-radius: 20px; overflow: hidden; }
+progress::-webkit-progress-bar { background: #141b2b; }
+progress::-webkit-progress-value { background: linear-gradient(90deg, #66b99a, #b7ecc7); border-radius: 20px; }
+dialog { overscroll-behavior: contain; scrollbar-gutter: stable; }
+dialog::backdrop { background: #100d20c9; backdrop-filter: blur(7px); }
+.small-button, .gold-button { min-height: 44px; padding: 10px 18px; font-size: 12px; line-height: 1.5; }
+.gold-button { background: linear-gradient(135deg, #ffe9b3, #dfb36d); border: 1px solid #ffe8ae; border-radius: 12px; color: #382b3c; box-shadow: inset 0 1px #fff5d9, 0 3px #80603e; }
+.small-button { border-radius: 10px; background: #514059; border-color: var(--ui-edge); color: #ffedcf; }
+.small-button:hover:not(:disabled) { background: #66516a; border-color: var(--ui-gold); }
+
+/* Village: a quiet frame around the illustrated world. */
+.lobby-header { z-index:10; padding-inline: clamp(16px, 3vw, 46px); background: linear-gradient(120deg, #33283f, #272337 65%, #3d2f44); box-shadow: 0 6px 22px #160e2455; }
+.player-avatar { border-radius: 18px; box-shadow: 0 0 0 4px #edcb8b0d, 0 4px 10px #120d2566; }
+.player-profile strong { font-size: 16px; }
+.player-profile>div>span { color: var(--ui-muted); font-size: 11px; }
+#connection { font-size: 11px; line-height: 1.5; }
+.currency { min-height: 38px; border-color: #bd9d7566; background: #1f1b2ea6; box-shadow: inset 0 1px 4px #0003; }
+.currency b { font-size: 17px; font-variant-numeric: tabular-nums; }
+.currency small { color: var(--ui-muted); font-size: 10px; }
+.audio-settings summary, .round-button, .battle-settings summary { min-width: 44px; width: 44px; min-height: 44px; height: 44px; border-color: var(--ui-edge); background: #4b3b52; }
+.audio-settings[open] .settings-body, .battle-settings[open]>div { top: 52px; width: 225px; padding: 16px; background: var(--ui-surface); border-color: var(--ui-edge); box-shadow: var(--ui-shadow); }
+.settings-body .music-toggle, .settings-body .sfx-toggle, .battle-settings .small-button { width: 100%; min-height: 44px; height: auto; font-size: 12px; white-space: normal; }
+.location { padding: 12px 18px; border: 1px solid #efca8a30; border-radius: 18px; background: linear-gradient(110deg, #292338d9, #29233877); backdrop-filter: blur(8px); }
+.location small { font-size: 10px; color: #e2cad7; }
+.location p { font-size: 11px; color: #f0decc; }
+.npc-plaque { border-radius: 15px; box-shadow: inset 0 1px #ffe4b51a, 0 5px 0 #211a2d, 0 10px 25px #17112366; }
+.npc-plaque small { color: #ecdae4; font-size: 10px; }
+.npc-plaque b { font-size: 18px; }
+.npc-action { font-size: 11px; padding: 6px 12px; }
+.bottom-nav { padding-inline: 2%; gap: 6px; background: linear-gradient(#393044, #282235); }
+.bottom-nav .nav-item { flex: 1; min-width: 0; border-radius: 12px; margin-block: 6px; padding: 4px 8px; }
+.nav-item b { font-size: 12px; color: #e4d4df; }
+.nav-item small { color: #b4a4bc; font-size: 8px; letter-spacing: 1px; }
+.nav-item.active { background: #d1a57420; }
+.nav-item.active b { color: #ffe5a6; }
+.hub-adventure { min-height: 54px; min-width: 220px; border-radius: 14px; font-size: 19px; }
+.hub-adventure small { font-size: 10px; letter-spacing: 0; }
+.scene-footer { font-size: 11px; }
+.chat-drawer { border-radius: 14px; border-color: var(--ui-edge); background: #282236f2; box-shadow: var(--ui-shadow); }
+.chat-drawer summary { min-height: 44px; font-size: 12px; padding: 10px 14px; }
+.chat-drawer summary>span { font-size: 10px; }
+#chat-lines { font-size: 12px; line-height: 1.85; }
+#chat-input { min-height: 44px; font-size: 14px; }
+#chat-form button { min-width: 44px; border: 1px solid var(--ui-edge); background: #66505e; }
+#toast { border-radius: 14px; background: #30263ef5; padding: 14px 24px; box-shadow: var(--ui-shadow); font-size: 14px; }
+
+/* One menu shell, with clear routes between the existing game systems. */
+#npc-dialog { width: min(1160px, 94vw); max-width: 1160px; max-height: 94svh; padding: 28px; border-radius: 24px; border-color: #e6c58c99; background: radial-gradient(ellipse at 0 0, #70506c45, transparent 60%), var(--ui-surface); box-shadow: inset 0 0 0 5px #edcb8b08, 0 30px 110px #080612bb; }
+#npc-dialog .dialog-heading { margin-bottom: 20px; padding-right: 54px; }
+#npc-dialog .dialog-heading>span { font-size: 10px; letter-spacing: 2px; color: #d4b585; }
+#npc-dialog .dialog-heading h2 { font-size: 28px; line-height: 1.5; margin: 5px 0; }
+#npc-dialog .dialog-heading p { font-size: 13px; color: var(--ui-muted); margin: 4px 0; }
+#npc-dialog .dialog-close { width: 44px; height: 44px; min-height: 44px; margin-bottom: -44px; border: 1px solid var(--ui-edge); background: #4e3c55; font-size: 26px; }
+.panel-navigation { display: flex; gap: 6px; overflow-x: auto; padding: 3px 2px 12px; margin-bottom: 18px; border-bottom: 1px solid #edcb8b33; scrollbar-width: thin; }
+.panel-navigation button { flex: 1 0 auto; min-height: 44px; padding: 9px 14px; border: 1px solid transparent; border-radius: 10px; color: var(--ui-muted); background: #17172640; font-size: 12px; }
+.panel-navigation button[aria-current=page] { color: #ffe6b1; background: #d6b17524; border-color: #edcb8b88; }
+.panel-navigation button:hover:not(:disabled) { background: #6e536a66; }
+#panel-message { font-size: 13px; color: var(--ui-jade); }
+#panel-message:empty { display: none; }
+#npc-dialog .demo-note, .item-note { font-size: 12px!important; line-height: 1.8; color: var(--ui-muted)!important; }
+.panel-wallet { font-size: 12px; padding-top: 0; }
+.panel-wallet b { font-size: 17px; }
+.character-dock, .item-detail, .creator-stage { border-color: #ba9c764d; background-color: #1b1c2b44; }
+.character-dock>small, .xp-label { font-size: 11px; }
+.character-dock h3 { font-size: 20px; }
+.stat-pills { font-size: 11px; color: var(--ui-muted); }
+.item-filters { gap: 8px; }
+.filter-tab { min-height: 44px; font-size: 12px; border-radius: 10px; }
+.filter-tab.selected { background: #9ed8bb1f; border-color: #a2e0c77f; color: #cff4dc; }
+.inventory-entry>span { font-size: 12px; min-height: 36px; }
+.inventory-entry>small { font-size: 12px; color: #edd2a0; }
+.item-slot { border-radius: 16px; box-shadow: inset 0 1px #fff1d00a; }
+.inventory-entry.selected .item-slot { box-shadow: 0 0 0 2px #ffe3a3, 0 7px 25px #e5bc651f; }
+.item-detail { border-radius: 18px; }
+.item-detail>small { font-size: 11px; }
+.item-detail p, .compare-row { font-size: 12px; color: var(--ui-muted); }
+.compare-table>small { font-size: 11px; color: var(--ui-muted); }
+.compare-row { padding-block: 7px; }
+.forge-choice p { font-size: 12px; }
+.forge-weapon { min-height: 68px; font-size: 12px; border-radius: 12px; }
+.forge-stage>small, .forge-chance small { font-size: 12px; color: var(--ui-muted); }
+.forge-stage .gold-button { min-height: 48px; }
+.mode-tabs { gap: 9px; }
+.mode-tabs button { font-size: 13px; min-height: 44px; }
+.dungeon-card { padding: 24px; border-radius: 18px; background: linear-gradient(90deg,#393249e8,#222a3bd9),url('assets/sheets/moon-valley.png') center/cover; }
+.dungeon-card h3 { font-size: 21px; }
+.dungeon-card small, .dungeon-card p { font-size: 12px; }
+.dungeon-card .chapter { font-size: 40px; opacity: .75; }
+.cleared { font-size: 11px; }
+.match-intro p, .help-copy p { font-size: 14px; color: var(--ui-muted); }
+.match-intro .gold-button { min-width: 230px; min-height: 50px; }
+.help-copy label { font-size: 13px; }
+.help-copy input { font-size: 16px; min-height: 44px; }
+.creator-view-tabs button { font-size: 13px; }
+.creator-controls .creator-choices button { min-height: 44px; font-size: 12px; }
+.creator-choices button.selected, .fashion-card.selected { border-color: var(--ui-jade); box-shadow: inset 0 0 0 1px #a2e0c755; background: linear-gradient(145deg,#4e7163,#2e4044); }
+.creator-name-label, .creator-options legend { font-size: 13px; }
+.fashion-toolbar label, .fashion-selected { font-size: 12px; }
+.fashion-toolbar select { min-height: 44px; font-size: 13px; }
+.fashion-card { padding: 9px 5px; border-radius: 14px; }
+.fashion-card img { height: 92px; }
+.fashion-card span, .visual-choices span { font-size: 11px; }
+.fashion-card small { font-size: 10px; }
+.fashion-pagination .small-button { min-width: 44px; min-height: 44px; }
+.fashion-colors summary { min-height: 44px; font-size: 13px; }
+.creator-colors label { font-size: 12px; }
+.creator-colors code { font-size: 10px; }
+.creator-footer { background: #2c273a; border-radius: 12px; padding: 12px; }
+.creator-footer p, .creator-footer>small { font-size: 11px; color: var(--ui-muted); }
+.creator-footer .gold-button { min-height: 48px; }
+
+/* Combat: keep health, turn and firing controls readable without covering the field. */
+.battle-header { background: linear-gradient(110deg,#342a40,#232638); }
+.battle-heading h1 { font-size: 20px; }
+.battle-heading small { font-size: 11px; letter-spacing: 0; }
+.battle-tools .small-button { min-height: 44px; font-size: 12px; }
+.battle-controls { gap: clamp(12px,2vw,28px); background: linear-gradient(130deg,#393044,#232739); padding: 14px 22px; }
+.hero-hud small { font-size: 12px; }
+.hero-hud span { font-size: 11px; }
+.aim-controls label { font-size: 13px; }
+.aim-controls input { height: 20px; margin: 1px 0; }
+.movement { margin-top: 7px; }
+.movement button { min-height: 40px; min-width: 40px; font-size: 12px; }
+.movement small { font-size: 10px; }
+.skill { min-height: 86px; border-radius: 12px; }
+.skill b { font-size: 11px; }
+.skill small { font-size: 9px; color: #c4b4ce; }
+.skill.selected { border-color: #ffe2a3; box-shadow: 0 0 0 2px #e5bf6e25; }
+.guard-button { min-height: 40px; margin-top: 3px; font-size: 12px; }
+.fire-button { border-radius: 18px; min-height: 100px; }
+.fire-button small { font-size: 10px; letter-spacing: 0; }
+#turn-badge, .wind-badge { font-size: 13px; border-radius: 12px; }
+.arena-hint { font-size: 12px; }
+.turn-chip { font-size: 11px; }
+.combat-feed { font-size: 12px; }
+#result-dialog, #leave-dialog { border-radius: 22px; border-color: var(--ui-edge); background: var(--ui-surface); color: var(--ui-paper); }
+#result-description, #leave-dialog p { font-size: 14px; color: var(--ui-muted); }
+.loot-cell { border-radius: 14px; }
+.loot-cell small { font-size: 12px; }
+.result-actions { flex-wrap: wrap; }
+.battle-chat { bottom: 204px; }
+.asset-studio .studio-header { background: #30273f; }
+.asset-studio .studio-note { color: var(--ui-muted); font-size: 12px; }
+
+@media (min-width:701px) and (max-width:1100px) {
+  .battle-controls { display:grid; grid-template-columns:160px minmax(180px,1fr) 225px 130px; gap:10px; padding:12px; }
+  .hero-hud { min-width:0; }
+  .movement { flex-wrap:wrap; }
+  .movement small { width:100%; }
+  .fire-button { min-width:0; }
+  .battle-arena { height:calc(100svh - 285px); }
+}
+@media (min-width:701px) and (max-width:820px) {
+  .hero-hud { display:none; }
+  .battle-controls { grid-template-columns:minmax(180px,1fr) 225px 130px; }
+}
+@media (max-width:900px) and (min-width:701px) {
+  .inventory-layout:not(.shop-layout) { grid-template-columns:180px minmax(0,1fr); }
+  .inventory-layout:not(.shop-layout) .item-detail { grid-column:2; }
+  .inventory-layout:not(.shop-layout) .character-dock { grid-row:1/3; }
+  .npc-plaque small { font-size:8px; }
+  .npc-plaque b { font-size:16px; }
+  .npc-action { font-size:9px; }
+  .hub-adventure { min-width:180px; padding-inline:14px; font-size:16px; }
+}
+@media (max-width:700px) {
+  .lobby-header { height:auto; min-height:76px; padding:10px 12px; gap:8px; flex-wrap:wrap; }
+  .player-avatar { width:44px; height:44px; }
+  .logo { font-size:23px; margin-right:auto; }
+  .wallet { gap:5px; }
+  .currency { padding-inline:6px; min-height:34px; }
+  .currency b { font-size:13px; }
+  .wallet .currency .coin-icon, .wallet .currency .ticket-icon { width:22px; height:22px; }
+  .wallet .currency .item-artwork { width:22px; height:22px; }
+  .audio-settings summary { width:44px; height:44px; }
+  .location { top:14px; left:12px; padding:8px 12px; }
+  .location h1 { font-size:18px; }
+  .location p { font-size:10px; }
+  .chat-drawer:not(.battle-chat) { top:auto; bottom:calc(158px + env(safe-area-inset-bottom)); right:10px; width:min(300px,calc(100vw - 20px)); }
+  .chat-drawer:not([open]):not(.battle-chat) { width:auto; }
+  .chat-drawer:not([open]) summary>span { display:none; }
+  .chat-drawer summary { min-height:44px; font-size:12px; }
+  .npc-plaque { min-height:70px; padding:7px 3px; }
+  .npc-plaque small { display:none; }
+  .npc-plaque b { font-size:13px; }
+  .npc-action { font-size:8px; padding:4px; white-space:normal; }
+  .scene-footer { font-size:10px; bottom:16px; max-width:70%; }
+  .bottom-nav { padding:7px 8px calc(8px + env(safe-area-inset-bottom)); gap:3px; }
+  .bottom-nav .nav-item { min-height:62px; padding:4px 2px; margin:0; }
+  .nav-item b { font-size:10px; }
+  .nav-item small { display:none; }
+  .hub-adventure { flex-basis:100%; min-width:100%; min-height:48px; margin-top:5px; font-size:17px; padding:8px; }
+  #npc-dialog, #npc-dialog[data-screen=summon] { width:96vw; max-height:96svh; padding:16px 12px; border-radius:18px; }
+  #npc-dialog .dialog-heading { padding-right:46px; margin-bottom:14px; }
+  #npc-dialog .dialog-heading>span { font-size:8px; letter-spacing:1px; }
+  #npc-dialog .dialog-heading h2 { font-size:21px; }
+  #npc-dialog .dialog-heading p { font-size:12px; }
+  .panel-navigation { gap:5px; margin-bottom:12px; }
+  .panel-navigation button { font-size:12px; padding-inline:12px; }
+  .panel-wallet { flex-wrap:wrap; justify-content:flex-start; gap:12px; font-size:11px; }
+  .panel-wallet b { font-size:15px; }
+  .inventory-layout, .shop-layout { gap:18px; }
+  .inventory-entry>span { font-size:11px; line-height:1.6; min-height:36px; }
+  .inventory-entry>small { font-size:11px; }
+  .item-slot { border-radius:12px; }
+  .item-filters { gap:4px; }
+  .filter-tab { font-size:11px; }
+  .item-detail p, .compare-row { font-size:12px; }
+  .item-primary { min-height:48px; }
+  .forge-choice .inventory-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .forge-weapon { font-size:11px; }
+  .dungeon-card { padding:16px; }
+  .dungeon-card h3 { font-size:19px; }
+  .dungeon-card small, .dungeon-card p { font-size:12px; }
+  .dungeon-card button { min-height:48px; font-size:13px; }
+  .mode-tabs button { flex:1; padding:8px 5px; font-size:12px; }
+  .creator-stage { border-radius:16px; }
+  .creator-controls .visual-choices button { min-height:110px; }
+  .creator-footer { position:sticky; bottom:-16px; z-index:3; margin-inline:-2px; box-shadow:0 -8px 24px #15112177; padding-bottom:calc(12px + env(safe-area-inset-bottom)); }
+  .creator-footer>small { display:none; }
+  .fashion-toolbar select { max-width:170px; font-size:12px; }
+  .fashion-card img { height:92px; }
+  .fashion-toolbar>span { font-size:11px; }
+  .creator-colors input { width:38px; height:38px; }
+  .creator-colors label { font-size:10px; }
+  .creator-colors code { font-size:8px; }
+  .battle-header { min-height:70px; height:auto; padding:8px 10px; flex-wrap:wrap; }
+  .battle-brand { font-size:20px; }
+  .battle-heading { order:3; flex-basis:100%; display:flex; justify-content:center; align-items:center; gap:9px; }
+  .battle-heading h1 { font-size:15px; margin:0; }
+  .battle-heading small { font-size:10px; }
+  .battle-tools { margin-left:auto; gap:8px; }
+  .battle-tools .small-button { min-height:44px; font-size:11px; }
+  .battle-arena { height:48svh; min-height:260px; }
+  .battle-controls { grid-template-columns:minmax(0,1fr) minmax(0,1fr); min-height:0; gap:12px; padding:12px 12px calc(16px + env(safe-area-inset-bottom)); }
+  .hero-hud { display:flex; grid-column:1/-1; min-width:0; border-bottom:1px solid #b99c7038; padding-bottom:7px; gap:10px; }
+  .hero-hud img { width:40px; height:48px; }
+  .hero-hud>div { flex:1; display:grid; grid-template-columns:1fr auto; gap:3px 12px; }
+  .hero-hud>div>b { font-size:15px; text-align:right; }
+  .hero-hud progress { width:100%; grid-column:1; height:8px; align-self:center; }
+  .hero-hud span { font-size:11px; text-align:right; }
+  .aim-controls { min-width:0; }
+  .aim-controls label { font-size:12px; }
+  .movement { flex-wrap:wrap; }
+  .movement button { min-height:44px; min-width:36px; padding:4px 6px; font-size:11px; }
+  .skill-controls { min-width:0; }
+  .skill { min-height:92px; padding:7px 2px; }
+  .skill b { font-size:10px; }
+  .skill small { font-size:9px; line-height:1.4; }
+  .guard-button { min-height:44px; font-size:11px; }
+  .fire-button { min-height:56px; border-radius:14px; }
+  .fire-button span { font-size:21px; }
+  .fire-button small { font-size:10px; }
+  .arena-hint { font-size:10px; max-width:95%; white-space:normal; text-align:center; }
+  #turn-badge, .wind-badge { font-size:11px; }
+  .turn-chip { font-size:9px; }
+  .combat-feed { font-size:11px; }
+  .battle-chat { position:static; margin:8px 12px 16px; width:auto; }
+  .battle-chat:not([open]) { width:auto; }
+  .battle-chat #chat-lines { height:110px; }
+  #result-dialog { padding:26px 18px; }
+  #result-loot { gap:7px; flex-wrap:wrap; }
+  .loot-cell { padding:12px; }
+}
+@media (max-width:380px) {
+  .lobby-header .logo { font-size:20px; }
+  .lobby-header .logo small { letter-spacing:1px; }
+  .currency { gap:3px; padding-inline:4px; }
+  .currency b { font-size:12px; }
+  .fashion-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .inventory-grid, .shop-layout .inventory-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (prefers-reduced-motion:reduce) {
+  button, a, dialog, .scene-world { transition:none!important; }
+  .queue-orbit { animation:none; }
+}
