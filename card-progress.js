@@ -2,11 +2,13 @@
 const crypto=require('node:crypto'),C=require('./card-catalog.js'),W=require('./card-content.js');
 const cap=id=>C.byId[id].tier==='SS'?1:3;
 function counts(deck){const out={};deck.forEach(id=>out[id]=(out[id]||0)+1);return out;}
+function qualifies(mode,turns,metrics,forfeit){return !forfeit&&turns>=5&&(metrics?.summons||0)>=1&&(metrics?.attacks||0)>=1&&!['friendly','lesson','puzzle'].includes(mode);}
 function create(id,name){return migrate({id,name,deck:C.starter(),deckName:'เรือนร้างแห่งแสงโคม',matches:0,wins:0,version:2,owned:counts(C.starter()),starterChosen:false});}
 function migrate(p,now=Date.now()){
   if(!p.version){p.owned=Object.fromEntries(C.cards.map(c=>[c.id,cap(c.id)]));p.legacy=true;p.starterChosen=true;p.version=2;}
   p.wallet??={coins:150,tickets:5,shards:0};p.xp??=0;p.mmr??=1000;p.pity??={s:0,ss:0,opened:0};p.decks??=[{id:'deck-1',name:p.deckName,cards:p.deck.slice()}];p.activeDeck??='deck-1';p.receipts??=[];
   p.progress??={lessons:[],puzzles:[],bosses:[],factions:{},cards:{},achievements:[],pass:[],history:[]};p.cosmetics??=['back-default','avatar-default','board-default'];p.equipped??={back:'back-default',avatar:'avatar-default',board:'board-default'};
+  p.progress.firstDuel??=p.progress.history.some(h=>qualifies(h.mode,h.turns,h.metrics,h.forfeit));
   const t=W.period(now);
   if(p.daily?.day!==t.day){const carry=p.daily?.quests.find(id=>!p.daily.claimed.includes(id)),q=W.quests.find(q=>q.id===carry),old=q?p.daily.progress[q.key]||0:0;p.daily={day:t.day,progress:{games:0,summons:0,blocked:0,damage:0,healing:0,attacks:0},quests:carry?[carry,...['play','summon','shield'].filter(id=>id!==carry).slice(0,2)]:['play','summon','shield'],carry:carry||null,claimed:[],rerolled:false,rewarded:0};if(q)p.daily.progress[q.key]=Math.min(old,q.goal);}
   if(p.weekly?.week!==t.week)p.weekly={week:t.week,boss:false,event:false,claimed:false};
@@ -51,7 +53,8 @@ function transact(p,msg,now=Date.now()){
 }
 function record(p,{mode,won,turns,metrics,opponent,forfeit=false,challenge=null,ratingDelta=0,now=Date.now(),deck=p.deck}){
   migrate(p,now);p.matches++;if(won)p.wins++;
-  const progress=p.progress,rewardable=!forfeit&&turns>=5&&(metrics.summons||0)>=1&&(metrics.attacks||0)>=1&&!['friendly','lesson','puzzle'].includes(mode);
+  const progress=p.progress,rewardable=qualifies(mode,turns,metrics,forfeit);
+  if(rewardable)progress.firstDuel=true;
   const loot={coins:0,tickets:0,xp:0};
   if(rewardable&&p.daily.rewarded<20){p.daily.rewarded++;loot.coins=mode==='pvp'?(won?40:20):(won?20:10);loot.xp=won?40:25;reward(p,loot);p.daily.progress.games++;for(const key of ['summons','blocked','damage','healing','attacks'])p.daily.progress[key]+=(metrics[key]||0);
     for(const [f,n]of Object.entries(metrics.factions||{}))progress.factions[f]=(progress.factions[f]||0)+n;

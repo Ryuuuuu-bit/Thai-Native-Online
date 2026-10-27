@@ -21,6 +21,7 @@ test('qualified match rewards and mastery exclude friends, surrender and repeate
   const p=P.create('p','ผล'),m={summons:4,attacks:3,damage:20,healing:2,blocked:4,played:{g001:4},factions:{wood:4}};
   const base=p.wallet.coins;P.record(p,{mode:'friendly',won:true,turns:10,metrics:m,opponent:'เพื่อน'});assert.equal(p.wallet.coins,base);P.record(p,{mode:'solo',won:true,turns:10,metrics:m,opponent:'AI',forfeit:true});assert.equal(p.wallet.coins,base);
   P.record(p,{mode:'boss',won:true,turns:10,metrics:m,opponent:'บอส',challenge:'boss:wood'});assert.equal(p.progress.cards.g001,4);assert.equal(p.progress.factions.wood,4);assert.equal(p.weekly.boss,true);assert.equal(p.daily.progress.games,1);assert.equal(p.progress.bosses.length,1);const tickets=p.wallet.tickets;
+  assert.equal(p.progress.firstDuel,true);p.progress.history=[];P.migrate(p);assert.equal(p.progress.firstDuel,true,'onboarding completion survives history trimming');
   P.record(p,{mode:'boss',won:true,turns:10,metrics:m,opponent:'บอส',challenge:'boss:wood'});assert.equal(p.wallet.tickets,tickets);
   const now=Date.now(),wallet=p.wallet.tickets;p.season.played=5;p.season.peak=1450;P.migrate(p,now+29*86400000);assert.ok(p.wallet.tickets>wallet);assert.ok(p.cosmetics.includes('back-season'));const after=p.wallet.tickets;P.migrate(p,now+29*86400000);assert.equal(p.wallet.tickets,after);
 });

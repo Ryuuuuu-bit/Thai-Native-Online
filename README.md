@@ -11,6 +11,10 @@ npm start
 
 Open http://localhost:4173. A new guest receives an owned 40-card wood deck, five summoning tickets, and one welcome deck from another element. Use **จัดเด็ค** to save up to five owned-card decks. Every element is also available as a free loaner in play modes. The collection supports search, element, rarity and cost filters, with twenty cards per page. The home preview uses a single atlas rather than downloading all five sheets up front.
 
+First-time visitors choose **Login** or **Guest** before entering the village. Login, registration and recovery show the fields appropriate to the selected action. Guest choice is remembered per profile in local browser storage; existing accounts, returning guests with progress and resumed matches bypass the chooser. A header shortcut opens account management later. Attaching an account preserves saved Guest progress; signing into a different account does not merge profiles.
+
+The newcomer guide follows saved progress through three lessons, the welcome deck, the first pack and one qualifying completed duel. Tutorial results offer the next lesson, and the first pack links back to the next step. The guide may be hidden or reopened without changing progress. The `firstDuel` completion flag persists independently of the twenty-entry match-history limit. Legacy profiles are not forced into onboarding. Recovery keys remain prominently visible after successful registration/recovery during the current page session; save them before reloading or logging out.
+
 **Solo:** choose any of five AI decks. **PvP:** casual and ranked players share one queue, matched by hidden skill rating with a widening range. Ranked requires a registered account. **Friends:** create a six-character room code. **Co-op:** two friends combine decks, share a hand/field, and alternate control each team turn against a boss. Use separate browsers or private windows to test accounts; cookies are shared between tabs. Chat and predefined, rate-limited emotes are supported.
 
 ## Progression and collection
