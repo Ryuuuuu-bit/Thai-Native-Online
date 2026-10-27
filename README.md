@@ -1,90 +1,62 @@
-# ThaiNative Online — ศึกแห่งไสยเวท
+# ThaiNative · คืนปลุกวิญญาณ
 
-Playable alpha: a Thai-folklore chibi artillery RPG with a Node.js authoritative server, Phaser battlefield, and a Thai DOM interface.
-
-## Run
-
-```sh
-npm ci
-npm start
-```
-
-Open http://localhost:4173. A Python static server cannot run the online features.
+A playable Thai folklore chibi card game. This replaces the former artillery RPG; its code, wardrobe, forge, dungeon screens and unused assets have been removed. Git commit `f3e3082` retains the former game. The new server leaves existing `data/players.json` untouched and writes separate card profiles to `data/card-players.json`.
 
 ## Play
 
-- Lobby: shopkeeper, spirit-medium wardrobe, and adventure guide.
-- Solo: three replayable dungeons with rewards and persistent XP.
-- Equipment: weapon, armor and charm slots; purchases affect PvE stats.
-- Forge: weapon upgrades to +5. Costs and chances are shown before attempts. Failures consume materials without destroying or downgrading equipment.
-- Wardrobe: two starter appearances and a jade palette unlock; appearances do not affect stats.
-- Co-op: two real players against two AI enemies.
-- PvP: live connected, turn-based 1v1 matchmaking, normalized to 300 HP / 58 attack.
-- Chat: live lobby chat with a 180-character limit and rate limiting.
-- Aim using angle and power sliders; arrows adjust angle/power when the page has focus; Space fires. Tap the battlefield to set an angle. Move twice per turn, guard, or use energy skills.
-- Solo shows a full trajectory guide; PvP shows only its beginning. The server computes wind, collisions, damage, terrain dents, turns and rewards.
-
-Use different browsers or a private window for two players. Tabs sharing a guest cookie are the same character; only one connection per character is active.
-
-## Persistence and deployment
-
-Guest profiles are stored in `DATA_DIR/players.json` (default `./data`, ignored by Git). An HttpOnly SameSite cookie identifies the guest. HTTPS cookies are Secure. Clearing the cookie creates a new guest. Battles and queues are in memory and reset on restart.
-
-Railway project: ThaiNative-Online. Dockerfile deployment, persistent volume at `/data`, `PORT` for the listener and `/health` for health checks. Exactly one replica is supported by this JSON storage implementation. Local profiles are not uploaded.
-
-Domain: https://thainative.online
-
-## Verification
-
-```sh
-npm test
-node lobby-motion.test.js
-node ui-sounds.test.js
-npm audit --omit=dev
+```powershell
+npm install
+npm start
 ```
 
-Tests cover inventory validation, enhancement success/failure/cap, PvP normalization, turn/skill/movement rules, complete solo simulations, and two WebSocket clients exercising chat, PvP, co-op and persistent inventory.
+Open http://localhost:4173. A new guest gets a legal 40-card wood deck. All 100 cards are available immediately. Use **จัดเด็ค** to choose one of five starters or build a mixed deck, then save before playing. The collection supports search, element, rarity and cost filters, with twenty cards per page. The home preview uses a single atlas rather than downloading all five sheets up front.
 
-## Alpha boundaries
+**Solo:** choose any of five AI decks. **PvP:** two real guests join the same queue. Use separate browsers or a private window to test two accounts; cookies are shared between tabs. Chat is shared across connected guests. No packs, paid random draws, login or account recovery are included.
 
-A playable vertical slice with three dungeons and a small equipment/appearance catalog. Friend invitations, rankings, moderation tools, guilds, login/account recovery, cross-device saves and production load testing are not implemented. Animation uses action sheets and whole-image fallback rather than a skeletal rig. No payments.
+## Rules
+
+- 30 player HP; 40-card decks; at most three copies of a card, one copy for SS.
+- Five-card opening hands; random first player skips their first draw. Maximum ten cards in hand and five units on each field.
+- Mana increases by one each own turn, up to eight, and refills. Newly summoned or revived units cannot attack until the next own turn.
+- Attacking units exchange damage simultaneously. Damage persists. Direct player attacks require the opponent field to be empty.
+- All 100 effects are implemented: healing, tokens, death effects, shields, freezing, sealing, protection, return to hand, revival, temporary attack buffs and graveyard interactions. Enter effects fire only when summoned from hand.
+- Shields absorb two on the next damage event and do not stack. Freeze blocks the target's next turn of attacking. Seal stops abilities through the next turn. Revival skips enter effects.
+- Turn timeout: 90 seconds. Disconnect grace: 20 seconds. Empty-deck draws inflict increasing fatigue that bypasses damage protection. Simultaneous lethal damage is a draw.
+
+Some descriptions use deterministic choices to keep play concise: lowest-health ally healing, sorting the top two cards by cost, and automatically selecting targets for multi-target legendary effects. Single-target enter effects can be selected on the field; the Summon button uses the first eligible target.
+
+## Structure
+
+| File | Purpose |
+| --- | --- |
+| `card-catalog.js` | 100 card definitions, five factions, starters and strict deck validation |
+| `card-engine.js` | Server-owned deterministic simulation, effect resolution, private views and AI |
+| `server.cjs` | HTTP, guest saves, WebSocket actions, private matchmaking, deadlines and chat |
+| `card-client.js` | Home, collection, deck editing, accessible card details and live duel UI |
+| `cards.css` | Responsive illustrated card UI, five-slot boards, mobile hand scrolling and reduced motion |
+| `assets/cards/` | Five original 20-tile atlases and their exact image_gen prompts |
+
+The simulation never trusts client mana, damage, hand contents or turn state. Each action checks the authoritative revision and ownership. Opponent hand identities, shuffled deck order and RNG seed are absent from public room views. Guests use HttpOnly/SameSite cookies. Player and chat text are escaped or inserted as text nodes. Public files are explicitly allowlisted; saves and server sources are inaccessible.
+
+Profile saves use a temporary file and rename. Rooms and queues are memory-only; a deployment or restart ends current matches. One connection per guest is active. For larger production traffic, move profile persistence to a database and rooms to shared infrastructure after measuring real demand.
 
 ## Art and audio
 
-Original chibi fantasy artwork generated with image_gen. Guide and forest enemy use action-sheet animation with fixed shared scale and foot anchors; the medium retains whole-image motion. Layered valley/forest art, 24 VFX frames, item atlas art and responsive inventory/shop/forge/wardrobe interfaces are integrated. Rendering never changes server collision or damage.
+Five native **image_gen** calls produced 100 illustrated tiles, one 5×4 sheet per faction. These are new paintings in the same chibi direction as the former NPC artwork. The reference was `assets/npc-summon.png` from commit `f3e3082`. Original PNGs remain unchanged; CSS background positions select each tile. Exact prompts are stored beside each PNG. See [art production notes](docs/CARD-ART.md).
 
-Open `/assets.html` for the interactive art and UI library. See [asset delivery notes](docs/ASSET-DELIVERY.md) for source frames, generation prompts, metadata workflow and animation limits. Download atlas metadata at `/assets/manifests/catalog.json`.
+The approved Thai lobby BGM, combat BGM and sound effects remain available. Playback and effects honor their mute controls and browser gesture requirements. No external generation API key is required to run the game.
 
-Accepted lobby BGM: `assets/lobby-thai-varied.mp3`. New 80-second Thai-instrument battle music: `assets/battle-chibi-thai.mp3`. Eight combat effects cover cast, impact, burst, heal, shield, victory, defeat and enhancement. Generated with ElevenLabs; requests are saved beside the assets. Audio starts on user interaction, caps overlapping combat effects at three, and ducks battle music under effects. Music and motion controls are in the gear menu. Google Fonts have local fallbacks. Older prototype files are retained but not loaded by the current game.
+## Verify
 
-## Character creation
+```powershell
+npm test
+node tests/live-smoke.cjs https://thainative.online
+```
 
-New guests see the creator on first connection. Existing guests open their portrait or the medium NPC. Choose male/female, eight faces, twelve hairstyles, five head-accessory choices (including none), and 60 separate fashions per gender. The twelve categories include Thai fantasy, forest, magic, suits, streetwear, football, festivals, basketball, runway, winter, urban casual and occupations/leisure. The 120 outfits are free; the three legacy outfits retain their original ownership and prices.
+Tests cover deck limits, all 100 enter effects, status timing, combat, death/revival, hidden information, 125 seeded AI matches, client draft/summon behavior, real WebSocket PvP, saves, invalid actions, reconnect, timeout and disconnect forfeits. Live smoke creates its own guest, saves a deck, starts a solo duel, validates privacy and concedes.
 
-Generated raster paper-doll bodies, faces, hair and head accessories share the NPC's chibi painted style. Each outfit has a default palette; choosing another outfit applies its palette. Five color pickers control skin, hair, clothing, trim and head decoration. Restore outfit colors or discard the entire unsaved draft. Neutral fabric, dark outlines and facial eyes are preserved by the selective dye renderer. Source metadata separates exposed skin from ivory fabric, so darker skin does not recolor cream skirts or white jackets.
+At initial delivery, browser UI verification was blocked because the Windows desktop was locked and no controlled browser was available. Automated client tests execute the actual script against a minimal DOM harness; they do not prove visual layout or mobile touch behavior. Card balance has not been tuned from human playtests. Matches and guest profiles are not a substitute for authenticated accounts or production load testing.
 
-The server validates the full appearance and name before saving. Cosmetics do not change equipment statistics. Saved appearance is replicated to other room participants and used by the lobby portrait, equipment preview, battle portrait and battlefield sprite. Older profiles and progress remain valid.
+## Deploy
 
-Sources: fashion-catalog.js (stable IDs, gender, names, palettes), sprite-character-data.js (source frames), sprite-character.js (Canvas composition, dye, action sheets), character-art.js (editor and legacy SVG fallback), and character-ui.css (responsive controls). See [all 120 designs](docs/FASHION-CATALOG.md) and [raster production notes](docs/PAINTED-CHARACTERS.md).
-
-Twenty-four automated tests cover validation, atomic unlocks, persistence, multiplayer appearance replication, catalog pagination, raster source bounds, palettes and dye isolation, alongside existing gameplay checks. Browser checks include saved dye after refresh, male/female previews, mobile-width layout and a solo movement/shot. Motion uses layered bob/lean/recoil, not articulated limb animation. Physical mobile devices and production load were not tested.
-
-## Review fixes · 2026-10-27
-
-All body atlases are indexed by complete connected silhouettes rather than fixed cell cuts. Painted action frames fit their actual layer bounds and use the shared foot baseline in combat. Battle portraits refresh after asynchronous character loading. Part caches reuse unchanged regions and do not reparse target colors for every pixel.
-
-Reselecting the current outfit preserves draft dye. Restoring saved appearance returns to the page containing the outfit. Queue cancellation stays closed; reconnects reconcile the queue with server state, and browser-history restores refresh closed sockets.
-
-Surrendering or disconnecting past the grace period gives no rewards. A teammate leaving off-turn does not cancel the remaining player's projectile or skip their turn. Departed players are removed from room delivery and may return to the lobby or start another encounter. Normal completed defeats retain their consolation rewards.
-
-## Expanded customization · 2026-10-27
-
-Added 20 painted garments (ten per gender), ten face parts (five new expressions per gender) and eight hairstyles. There are now 60 outfits per gender, eight selectable faces per gender, twelve shared hairstyles and five existing head-accessory choices. Face and hair buttons show painted previews; color changes update these previews alongside the character. Old saved IDs and dyes remain valid. New outfits are free and retain their own preset palettes.
-
-Four additional source atlases and their exact native image_gen prompts are listed in [painted character production](docs/PAINTED-CHARACTERS.md). Every source PNG remains unchanged; index metadata supplies crop bounds, skin regions and calibrated hair placement. Saved new face/hair/outfit IDs are validated and replicated through the same server and battle compositor.
-
-## Shared interface refresh · 2026-10-27
-
-`ui-theme.css` provides the village, creator, inventory, shop, forge, adventure, matchmaking, combat, results and asset gallery with shared plum, warm gold and jade styling. Larger Thai text, focus outlines, touch targets, reduced motion and mobile safe-area spacing apply across these surfaces. Inventory and adventure menus now have direct routes between game systems; switching is blocked while a save is pending. The creator keeps its editing flow separate, with a sticky mobile save area. Combat shows health on mobile and keeps firing controls below the arena. Outfit changes require pressing Save; the village hint now says so.
-
-Validation: 25 automated tests, local HTTP checks for all three HTML pages and the shared stylesheet, plus the profile/equipment/combat smoke test. Browser visual checks were unavailable during this refresh; mobile layout and actual viewport overlap still need a browser pass.
+Railway runs the Dockerfile with `HOST=0.0.0.0`, its assigned `PORT`, and a persistent volume mounted at `/data`. The public domain is https://thainative.online. Keep the volume attached when redeploying.

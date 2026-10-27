@@ -1,8 +1,0 @@
-Create a production game VFX sprite atlas for ThaiNative, a cute Thai magical chibi RPG. Genuine transparent background, no black fill, no checkerboard painted in, no text or labels. EXACTLY FOUR columns by SIX rows of separate effects, each centered inside equal square slots with 20% empty padding; no effect touches neighboring slots. Portrait aspect 2:3. Soft painted cel shaded magical wisps, clean readable silhouettes, warm gold jade and violet. Each row shows FOUR consecutive frames: beginning, expansion, peak, dissipating.
-Row1 golden lotus talisman spark/impact, crescent and tiny gold flecks.
-Row2 violet spirit burst, round fluffy magic puff with gold sparks, not smoke of fire.
-Row3 jade healing lotus petals curling upward in a circular ring.
-Row4 translucent cyan protective circular rune shield with simple gold lotus ornament.
-Row5 warm gold star-shaped hit spark, compact sharp flash.
-Row6 celebratory small gold and jade star/petal shower, confined within slot.
-Everything isolated on transparent background, no characters, no typography, no environmental scenery. Same central pivot in every cell. Effects vary size across animation intentionally but stay inside equal cells.
