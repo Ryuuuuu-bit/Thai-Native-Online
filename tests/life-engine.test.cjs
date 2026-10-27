@@ -20,7 +20,7 @@ test('travel and activity costs are applied atomically and invalid actions do no
 });
 
 test('Bangkok landmarks have playable activities with clear costs and correct destinations', () => {
-  const named = ['เยาวราช', 'สีลม', 'สวนลุมพินี', 'ถนนข้าวสาร', 'วัดอรุณ', 'เสาชิงช้า', 'อนุสาวรีย์ชัยสมรภูมิ'];
+  const named = ['เยาวราช', 'สีลม', 'สวนลุมพินี', 'ถนนข้าวสาร', 'วัดอรุณ', 'เสาชิงช้า', 'อนุสาวรีย์ชัยสมรภูมิ', 'ร้านเกม', 'ร้านดูดวง', 'ร้านสะดวกซื้อ 24 ชม.'];
   for (const name of named) {
     const location = Life.locations.find(l => l.name === name);
     assert.ok(location, name);
@@ -31,6 +31,18 @@ test('Bangkok landmarks have playable activities with clear costs and correct de
     assert.equal(result.ok, true, name);
     assert.equal(result.state.location, location.id);
     assert.equal(result.state.hours, 40 - action.hours - 2);
+  }
+});
+
+test('new neighborhood activities charge their listed costs and grant their advertised effects', () => {
+  for (const id of ['arcadeplay', 'arcadejob', 'fortunevisit', 'minimartjob', 'minimartsnack']) {
+    const action = Life.actions.find(a => a.id === id);
+    const state = { ...Life.create('ชาวกรุง', 'balance'), energy: 50, happiness: 50 };
+    const result = Life.act(state, id);
+    assert.equal(result.ok, true, id);
+    assert.equal(result.state.money, state.money + (action.money || 0), id);
+    assert.equal(result.state.energy, state.energy + (action.energy || 0), id);
+    assert.equal(result.state.happiness, state.happiness + (action.happiness || 0), id);
   }
 });
 
@@ -79,4 +91,46 @@ test('a complete twenty-week game stays playable and reaches an actual collectio
   assert.equal(state.week, 20);
   assert.equal(Life.score(state).success, true);
   assert.ok(state.history.length <= 20);
+});
+
+test('missions reward once, survive a save reload and refresh after three weeks', () => {
+  let state = Life.create('คนขยัน', 'wealth');
+  assert.equal(Life.mission(state).expiresWeek, 3);
+  assert.equal(Life.mission(state).count, 0);
+  state = Life.act(state, 'shop').state;
+  assert.equal(Life.mission(state).count, 1);
+  state = JSON.parse(JSON.stringify(state));
+  const before = state.money;
+  const completed = Life.act(state, 'shop');
+  assert.equal(completed.state.money, before + 650 + 350);
+  assert.match(completed.message, /ภารกิจสำเร็จ/);
+  assert.equal(Life.mission(completed.state).completed, true);
+  state = JSON.parse(JSON.stringify(completed.state));
+  const again = Life.act(state, 'shop');
+  assert.equal(again.state.money, state.money + 650);
+  assert.equal(Life.mission(again.state).count, 2);
+  state = again.state;
+  for (let i = 0; i < 3; i++) state = Life.endWeek(state, () => 0.5).state;
+  assert.equal(state.week, 4);
+  assert.equal(Life.mission(state).id, 'sightseeing');
+  assert.equal(Life.mission(state).count, 0);
+  assert.equal(Life.mission(state).expiresWeek, 6);
+});
+
+test('old saves get a fresh mission without losing progress; unique sightseeing cannot be farmed', () => {
+  let state = { ...Life.create('ชาวกรุงเดิม', 'balance'), week: 4, money: 4000 };
+  delete state.mission;
+  const before = JSON.stringify(state);
+  assert.equal(Life.mission(state).id, 'sightseeing');
+  assert.equal(JSON.stringify(state), before);
+  state = Life.act(state, 'templevisit').state;
+  assert.equal(Life.mission(state).count, 1);
+  state = Life.act(state, 'templevisit').state;
+  assert.equal(Life.mission(state).count, 1);
+  const money = state.money;
+  state = Life.act(state, 'swingvisit').state;
+  assert.equal(Life.mission(state).completed, true);
+  assert.equal(state.money, money - 120 + 350);
+  assert.equal(state.week, 4);
+  assert.equal(state.name, 'ชาวกรุงเดิม');
 });

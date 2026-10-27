@@ -36,3 +36,27 @@ test('life UI ignores a corrupt save and warns when browser storage refuses to s
   c.node('player-name').value='ชาวกรุง';c.submit();
   assert.match(c.node('app').innerHTML,/บันทึกไม่สำเร็จ/);
 });
+
+test('life UI offers activities at the arcade, fortune teller and convenience store',()=>{
+  const store=new Map(), c=client(store);c.node('player-name').value='ชาวกรุง';c.submit();
+  for(const [location, label, action] of [
+    ['arcade','แข่งตู้เกมกับเพื่อน','arcadeplay'],
+    ['fortune','ให้หมอดูเปิดไพ่','fortunevisit'],
+    ['minimart','ซื้อของว่าง','minimartsnack']
+  ]){
+    c.click({location});assert.match(c.node('app').innerHTML,new RegExp(label));c.click({action});
+    assert.equal(JSON.parse(store.get(key)).game.location,location);
+  }
+});
+
+test('life UI displays mission progress and an automatic one-time reward, including older saves',()=>{
+  const saved=Life.create('ชาวกรุง','balance');delete saved.mission;
+  const store=new Map([[key,JSON.stringify({game:saved,gender:'female'})]]), c=client(store);
+  assert.match(c.node('app').innerHTML,/ภารกิจหาเงินค่าขนม/);
+  assert.match(c.node('app').innerHTML,/0\/2/);
+  assert.match(c.node('app').innerHTML,/สัปดาห์ 1–3/);
+  c.click({location:'market'});c.click({action:'shop'});c.click({action:'shop'});
+  assert.match(c.node('app').innerHTML,/รับรางวัล 350 ฿ แล้ว/);
+  const afterReward=JSON.parse(store.get(key)).game.money;
+  c.click({action:'shop'});assert.equal(JSON.parse(store.get(key)).game.money,afterReward+650);
+});

@@ -1,6 +1,6 @@
 # ThaiNativeOnline · ชีวิตติดกรุง Demo
 
-Open `/life.html` for the single-player Bangkok life-simulation demo. Create a character, choose one of four goals, visit Bangkok landmarks, manage 40 hours per week, and complete 20 weeks. Movement between locations costs two hours; ending a week charges rent and triggers an event. The demo saves automatically in this browser's local storage, separately from the card-game profile. It does not yet support online multiplayer, account/cloud saves, or animated travel.
+Open `/life.html` for the single-player Bangkok life-simulation demo. Create a character, choose one of four goals, visit Bangkok landmarks and original shops (arcade, fortune teller, and an unbranded 24-hour convenience store), manage 40 hours per week, and complete 20 weeks. Movement between locations costs two hours; ending a week charges rent and triggers an event. Short missions rotate every three weeks and automatically award a one-time bonus. The demo saves automatically in this browser's local storage, separately from the card-game profile. It does not yet support online multiplayer, account/cloud saves, or animated travel.
 
 The city and character illustrations are original generated assets; the high-angle cartoon-map concept is generic and no reference-game assets are included.
 
