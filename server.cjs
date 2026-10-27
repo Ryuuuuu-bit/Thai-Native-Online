@@ -1,7 +1,8 @@
 'use strict';
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const {WebSocketServer}=require('ws'),C=require('./card-catalog.js'),D=require('./card-engine.js'),W=require('./card-content.js'),P=require('./card-progress.js'),H=require('./card-challenges.js'),{accounts}=require('./card-accounts.js');
-function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data'),turnMs=90000,botDelay=850,disconnectMs=20000}={}){
+const {createLifeMultiplayer}=require('./life-multiplayer.cjs');
+function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data'),turnMs=90000,botDelay=850,disconnectMs=20000,lifeDisconnectMs=60000}={}){
   fs.mkdirSync(dataDir,{recursive:true});const savePath=path.join(dataDir,'card-players.json'),profiles=fs.existsSync(savePath)?JSON.parse(fs.readFileSync(savePath,'utf8')):{},auth=accounts(dataDir);
   if(fs.existsSync(savePath)&&Object.values(profiles).some(p=>!p.version)){try{fs.copyFileSync(savePath,savePath+'.pre-progression-backup',fs.constants.COPYFILE_EXCL);}catch(e){if(e.code!=='EEXIST')throw e;}}
   Object.values(profiles).forEach(p=>P.migrate(p));
@@ -49,7 +50,7 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
   function matchQueue(){for(const id of queue.slice()){const a=clients.get(id),qa=queueOptions.get(id);if(!a||!qa){dequeue(id);continue;}const range=150+Math.floor((Date.now()-qa.joined)/10000)*100,other=queue.find(b=>b!==id&&clients.has(b)&&Math.abs(lookup(b).mmr-a.p.mmr)<=range);if(other){const qb=queueOptions.get(other);try{start('pvp',[a.p,lookup(other)],{loaners:{[id]:qa.loaner,[other]:qb.loaner},ranked:{[id]:qa.ranked,[other]:qb.ranked}});}catch(e){dequeue(id);send(a.ws,{type:'error',message:e.message});}}}}
   function setCookie(res,token,req){res.setHeader('Set-Cookie',`native_session=${token}; HttpOnly; SameSite=Strict; Path=/; Max-Age=2592000${req.headers['x-forwarded-proto']==='https'?'; Secure':''}`);}
   function rotate(res,p,req){const oldToken=tokenOf(req),revoke=new Set([p.id,profiles[oldToken]?.id]);for(const [token,value]of Object.entries(profiles))if(token===oldToken||value.id===p.id){delete profiles[token];if(value.id!==p.id)profiles['saved-'+value.id]=value;}const token=crypto.randomBytes(32).toString('hex');profiles[token]=p;setCookie(res,token,req);persist();for(const id of revoke)clients.get(id)?.ws.close(4001);}
-  const publicFiles=new Set(['index.html','cards.css','progress.css','card-client.js','card-catalog.js','card-content.js','ui-sounds.js','game-audio.js','life.html','life.css','life-client.js','life-engine.js']);
+  const publicFiles=new Set(['index.html','cards.css','progress.css','card-client.js','card-catalog.js','card-content.js','ui-sounds.js','game-audio.js','life.html','life.css','life-client.js','life-engine.js','life-party.js']);
   const server=http.createServer(async(req,res)=>{
     res.setHeader('X-Content-Type-Options','nosniff');res.setHeader('Referrer-Policy','same-origin');
     let pathname;try{pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);}catch{res.writeHead(400);return res.end();}
@@ -69,7 +70,8 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
     if(!publicFiles.has(relative)&&!/^assets\/(?:cards\/[a-z-]+\.png|(?:life-bangkok\.png|life-characters\.png|battle-chibi-moonforest\.png|lobby-thai-varied\.mp3|battle-chibi-thai\.mp3)|sfx\/[\w-]+\.mp3)$/.test(relative)){res.writeHead(404);return res.end('Not found');}
     const file=path.join(__dirname,relative);if(!fs.existsSync(file)){res.writeHead(404);return res.end('Not found');}const types={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.png':'image/png','.mp3':'audio/mpeg'};res.setHeader('Content-Type',types[path.extname(file)]);res.setHeader('Cache-Control',relative.startsWith('assets/')?'public, max-age=3600':'no-cache');fs.createReadStream(file).pipe(res);
   });
-  const wss=new WebSocketServer({noServer:true,maxPayload:8192});server.on('upgrade',(req,socket,head)=>{const origin=req.headers.origin;if(req.url!=='/socket'||!profiles[tokenOf(req)]||(origin&&origin!==`http://${req.headers.host}`&&origin!==`https://${req.headers.host}`)){socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');return socket.destroy();}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
+  const lifeMultiplayer=createLifeMultiplayer({disconnectMs:lifeDisconnectMs});
+  const wss=new WebSocketServer({noServer:true,maxPayload:8192});server.on('upgrade',(req,socket,head)=>{if(req.url==='/life-socket')return lifeMultiplayer.upgrade(req,socket,head);const origin=req.headers.origin;if(req.url!=='/socket'||!profiles[tokenOf(req)]||(origin&&origin!==`http://${req.headers.host}`&&origin!==`https://${req.headers.host}`)){socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');return socket.destroy();}wss.handleUpgrade(req,socket,head,ws=>wss.emit('connection',ws,req));});
   wss.on('connection',(ws,req)=>{
     const p=profiles[tokenOf(req)],old=clients.get(p.id);if(old)old.ws.close(4001);cancel(disconnectTimers.get(p.id));disconnectTimers.delete(p.id);
     const c={ws,p,lastChat:0,lastEmote:0,messages:0,window:Date.now(),alive:true};clients.set(p.id,c);send(ws,{type:'hello',profile:publicProfile(p),online:clients.size,chat:history,queued:queue.includes(p.id),waiting:[...waiting.values()].find(w=>w.host===p.id)||null});broadcast({type:'presence',online:clients.size});const existing=current(p.id);if(existing)publish(existing);ws.on('pong',()=>c.alive=true);
@@ -101,6 +103,6 @@ function createServer({dataDir=process.env.DATA_DIR||path.join(__dirname,'data')
     ws.on('close',()=>{if(clients.get(p.id)!==c||closing)return;clients.delete(p.id);dequeue(p.id);broadcast({type:'presence',online:clients.size});disconnectTimers.set(p.id,later(()=>{disconnectTimers.delete(p.id);if(!clients.has(p.id)){cancelWaiting(p.id);const r=current(p.id);if(r?.game.phase==='playing'){const m=r.members.find(m=>m.id===p.id);if(r.mode==='coop'&&r.members.some(a=>a.id!==p.id&&clients.has(a.id)))return;r.forfeit=true;r.forfeitSide=m.side;D.concede(r.game,m.side);schedule(r);publish(r);}}},disconnectMs));});ws.on('error',()=>{});
   });
   const heartbeat=setInterval(()=>{for(const c of clients.values()){if(!c.alive)c.ws.terminate();else{c.alive=false;c.ws.ping();}}},30000),matchTimer=setInterval(matchQueue,5000);heartbeat.unref();matchTimer.unref();
-  return {server,rooms,close:async()=>{closing=true;clearInterval(heartbeat);clearInterval(matchTimer);for(const t of timers)clearTimeout(t);for(const c of clients.values())c.ws.terminate();await new Promise(resolve=>wss.close(resolve));await new Promise(resolve=>server.close(resolve));}};
+  return {server,rooms,close:async()=>{closing=true;clearInterval(heartbeat);clearInterval(matchTimer);for(const t of timers)clearTimeout(t);for(const c of clients.values())c.ws.terminate();await lifeMultiplayer.close();await new Promise(resolve=>wss.close(resolve));await new Promise(resolve=>server.close(resolve));}};
 }
 if(require.main===module){const app=createServer();app.server.listen(Number(process.env.PORT)||4173,process.env.HOST||'127.0.0.1',()=>console.log(`ThaiNative Card Duel: http://localhost:${process.env.PORT||4173}`));}module.exports={createServer};

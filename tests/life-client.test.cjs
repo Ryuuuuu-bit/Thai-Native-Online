@@ -4,19 +4,23 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 const Life = require('../life-engine.js');
+const LifeParty = require('../life-party.js');
 const script = fs.readFileSync(require.resolve('../life-client.js'), 'utf8');
 const key = 'thainative-life-demo-v1';
 
-function client(store = new Map(), denySave = false, life = Life) {
+function client(store = new Map(), denySave = false, life = Life, options = {}) {
   const nodes = new Map(), events = {};
+  const sockets=[],timers=[];
+  class Socket { constructor(url){this.url=url;this.readyState=0;this.sent=[];sockets.push(this);} open(){this.readyState=1;this.onopen();} send(data){this.sent.push(JSON.parse(data));} receive(data){this.onmessage({data:JSON.stringify(data)});} close(){this.readyState=3;if(this.onclose)this.onclose();} }
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', value:'', textContent:'', classList:{add(){}, remove(){}}, focus(){}, showModal(){}, close(){} });
     return nodes.get(id);
   }
   const document = { getElementById:node, addEventListener:(name,fn)=>events[name]=fn, querySelectorAll:()=>[], querySelector:()=>null };
   const localStorage = { getItem:k=>store.get(k) ?? null, setItem:(k,v)=>{if(denySave)throw new Error('unavailable');store.set(k,v);}, removeItem:k=>store.delete(k) };
-  vm.runInNewContext(script, { document, Life:life, localStorage, confirm:()=>true, setTimeout:()=>0, clearTimeout(){} });
-  return { node, events, click:(dataset={},id='')=>events.click({target:{closest:()=>({dataset,id})}}), submit:()=>events.submit({target:{id:'start-form'},preventDefault(){}}) };
+  const session=new Map(), sessionStorage={getItem:k=>session.get(k)||null,setItem:(k,v)=>session.set(k,v),removeItem:k=>session.delete(k)};
+  vm.runInNewContext(script, { document, Life:life, LifeParty, localStorage,sessionStorage,WebSocket:Socket,location:{protocol:'http:',host:'localhost'},confirm:()=>options.confirm!==false, setTimeout:fn=>{timers.push(fn);return timers.length;}, clearTimeout(){} });
+  return { node, events, sockets,session,timers,click:(dataset={},id='')=>events.click({target:{closest:()=>({dataset,id})}}), submit:(id='start-form')=>events.submit({target:{id},preventDefault(){}}) };
 }
 
 test('life UI starts, escapes player names, completes landmark activity and resumes saved progress',()=>{
@@ -81,4 +85,62 @@ test('temporary shelter is labelled honestly and old saves retain neutral values
   const old=Life.create('ผู้เล่นเดิม','balance');const store=new Map([[key,JSON.stringify({game:old,gender:'female'})]]),legacy=client(store);
   assert.match(legacy.node('app').innerHTML,/เป้าหมาย: ชีวิตสมดุล/);assert.doesNotMatch(legacy.node('app').innerHTML,/Passive ประจำตัว/);
   legacy.click({location:'market'});assert.match(legacy.node('app').innerHTML,/\+650 ฿/);
+});
+
+test('local co-op saves separately, switches turns and can resume without touching the solo game',()=>{
+  const solo=Life.create('โซโล','balance'),store=new Map([[key,JSON.stringify({game:solo,gender:'male'})]]), c=client(store);
+  const before=store.get(key);c.click({},'mode-menu');c.click({mode:'local'});
+  for(const [i,name,career] of [[1,'ฟ้า','office'],[2,'ดิน','rider']]){c.node('party-name-'+i).value=name;c.node('party-career-'+i).value=career;c.node('party-gender-'+i).value='female';}
+  c.submit('party-form');assert.match(c.node('app').innerHTML,/ฟ้า/);assert.equal(store.get(key),before);
+  c.click({},'end-week');let saved=JSON.parse(store.get('thainative-life-party-v1'));assert.equal(saved.active,1);assert.match(c.node('app').innerHTML,/ดิน/);
+  c.click({},'mode-menu');c.click({},'party-resume');assert.match(c.node('app').innerHTML,/ดิน/);assert.equal(store.get(key),before);
+  const other=client(store,false,Life,{confirm:false});other.click({},'mode-menu');other.click({mode:'local'});
+  for(const i of [1,2]){other.node('party-name-'+i).value='ใหม่'+i;other.node('party-career-'+i).value='office';other.node('party-gender-'+i).value='male';}
+  other.submit('party-form');assert.equal(store.get('thainative-life-party-v1'),JSON.stringify(saved));assert.equal(store.get(key),before);
+});
+
+test('AI co-op advances the AI turn and preserves a distinct local save',()=>{
+  const store=new Map(),c=client(store);c.click({},'mode-menu');c.click({mode:'ai'});
+  for(const [i,name] of [[1,'ชาวกรุง'],[2,'เพื่อน AI']]){c.node('party-name-'+i).value=name;c.node('party-career-'+i).value='office';c.node('party-gender-'+i).value='female';}
+  c.submit('party-form');c.click({},'end-week');const party=JSON.parse(store.get('thainative-life-party-v1'));
+  assert.equal(party.week,2);assert.equal(party.active,0);assert.equal(party.players[1].ai,true);assert.ok(party.players[1].game.money!==2600);
+});
+
+test('online lobby sends private handshake and room commands; only active player can act',()=>{
+  const store=new Map(),c=client(store);c.click({},'mode-menu');c.click({mode:'online'});
+  c.node('online-name').value='เพื่อน';c.node('online-career').value='office';c.node('online-gender').value='female';c.click({},'online-create');
+  const socket=c.sockets[0];socket.open();assert.equal(socket.sent[0].type,'hello');socket.receive({type:'welcome',token:'a'.repeat(64),resumed:false});assert.equal(socket.sent[1].type,'create');
+  const game=Life.create('เพื่อน',null,'office');const room={phase:'lobby',code:'ABCD23',self:'p1',host:'p1',players:[{id:'p1',name:'เพื่อน',connected:true}],revision:0};
+  socket.receive({type:'state',room});assert.match(c.node('app').innerHTML,/ABCD23/);assert.match(c.node('app').innerHTML,/disabled/);
+  room.phase='playing';room.current='p1';room.revision=1;room.objective={teamIntact:true};room.players[0].game=game;room.players.push({id:'p2',name:'ดาว',game:Life.create('ดาว',null,'rider'),connected:true});
+  socket.receive({type:'state',room});c.click({action:'officework'});assert.equal(socket.sent.at(-1).type,'act');assert.equal(socket.sent.at(-1).revision,1);assert.equal(store.has(key),false);
+  room.current='p2';socket.receive({type:'state',room});assert.match(c.node('app').innerHTML,/รอเพื่อนเล่น/);
+  room.players[0].game.week=2;socket.receive({type:'state',room});assert.match(c.node('app').innerHTML,/สัปดาห์ทีม 1\/20/);assert.match(c.node('app').innerHTML,/สัปดาห์ของคุณ 2 \/ 20/);
+  room.objective.teamIntact=false;socket.receive({type:'state',room});assert.match(c.node('app').innerHTML,/สมาชิกออกจากเกม/);
+});
+
+test('interrupted matchmaking is cleared and returning to menu does not overwrite solo save',()=>{
+  const solo=Life.create('เดิม','balance'),store=new Map([[key,JSON.stringify({game:solo,gender:'female'})]]),c=client(store),before=store.get(key);
+  c.click({},'mode-menu');c.click({mode:'online'});c.node('online-name').value='ใหม่';c.node('online-career').value='office';c.node('online-gender').value='male';c.click({},'online-match');
+  const socket=c.sockets[0];socket.open();socket.receive({type:'welcome',token:'b'.repeat(64),resumed:false});socket.receive({type:'queue',queued:true});assert.match(c.node('app').innerHTML,/กำลังค้นหา/);
+  socket.close();assert.doesNotMatch(c.node('app').innerHTML,/กำลังค้นหา/);assert.match(c.node('app').innerHTML,/ค้นหาคู่/);assert.equal(c.session.has('thainative-life-online-active'),false);assert.equal(store.get(key),before);
+});
+
+test('a damaged party save is not offered for resume and does not affect solo',()=>{
+  const solo=Life.create('เดิม','balance'),store=new Map([[key,JSON.stringify({game:solo,gender:'female'})],['thainative-life-party-v1',JSON.stringify({players:[{name:'A',game:{}},{name:'B',game:{}}],active:0,week:1,finished:false,log:[]})]]),c=client(store);
+  assert.match(c.node('app').innerHTML,/เดิม/);c.click({},'mode-menu');assert.doesNotMatch(c.node('app').innerHTML,/เล่นเกมในเครื่องต่อ/);assert.equal(store.get(key),JSON.stringify({game:solo,gender:'female'}));
+});
+
+test('leaving before online connection completes discards the pending room request',()=>{
+  const c=client();c.click({},'mode-menu');c.click({mode:'online'});c.node('online-name').value='A';c.node('online-career').value='office';c.node('online-gender').value='female';c.click({},'online-create');
+  const first=c.sockets[0];c.click({},'online-back');assert.equal(first.readyState,3);
+  c.click({mode:'online'});c.node('online-name').value='B';c.node('online-career').value='rider';c.node('online-gender').value='male';c.click({},'online-match');
+  const second=c.sockets[1];second.open();second.receive({type:'welcome',token:'c'.repeat(64),resumed:false});assert.equal(second.sent.at(-1).type,'match');assert.equal(second.sent.at(-1).name,'B');
+});
+
+test('an expired reconnect returns to online setup instead of showing stale room',()=>{
+  const c=client();c.click({},'mode-menu');c.click({mode:'online'});c.node('online-name').value='A';c.node('online-career').value='office';c.node('online-gender').value='female';c.click({},'online-create');
+  const first=c.sockets[0];first.open();first.receive({type:'welcome',token:'d'.repeat(64),resumed:false});first.receive({type:'state',room:{phase:'lobby',code:'ABCD23',self:'p1',host:'p1',players:[{id:'p1',name:'A',connected:true}],revision:0}});
+  first.close();c.timers.at(-1)();const second=c.sockets[1];second.open();second.receive({type:'welcome',token:'e'.repeat(64),resumed:false,queued:false});
+  assert.doesNotMatch(c.node('app').innerHTML,/ABCD23/);assert.match(c.node('app').innerHTML,/สร้างห้อง/);assert.equal(c.session.has('thainative-life-online-active'),false);
 });
