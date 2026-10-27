@@ -6,7 +6,7 @@ const assert=require('node:assert/strict'),{WebSocket}=require('ws'),C=require('
   const ws=new WebSocket(base.replace(/^http/,'ws')+'/socket',{headers:{Cookie:cookie,Origin:base}}),messages=[];ws.on('message',raw=>messages.push(JSON.parse(raw)));await new Promise((r,j)=>{ws.once('open',r);ws.once('error',j);});
   const send=msg=>ws.send(JSON.stringify(msg));async function wait(type,predicate=()=>true){for(let i=0;i<400;i++){const error=messages.find(m=>m.type==='error');if(error)throw Error(error.message);const ix=messages.findIndex(m=>m.type===type&&predicate(m));if(ix>=0)return messages.splice(ix,1)[0];await new Promise(r=>setTimeout(r,25));}throw Error('Timeout '+type);}
   try{
-    await wait('hello');send({type:'save',name:'Card QA',deckName:'Moon River QA',deck:C.starter('water')});assert.deepEqual((await wait('profile')).profile.deck,C.starter('water'));
+    await wait('hello');send({type:'starter',id:'water',request:'live-starter-'+Date.now()});await wait('profile');send({type:'save',name:'Card QA',deckName:'Moon River QA',deck:C.starter('water')});assert.deepEqual((await wait('profile')).profile.deck,C.starter('water'));
     const saved=await (await fetch(base+'/api/profile',{headers:{Cookie:cookie}})).json();assert.equal(saved.deckName,'Moon River QA');
     send({type:'play',mode:'solo',faction:'fire'});let room=(await wait('room')).room;assert.equal(room.players[1-room.you].hand,undefined);assert.equal(room.players[1-room.you].deck,undefined);assert.equal(room.seed,undefined);
     if(room.active!==room.you)room=(await wait('room',m=>m.room.active===m.room.you)).room;

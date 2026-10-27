@@ -3,11 +3,11 @@ const {test}=require('node:test'),assert=require('node:assert/strict'),vm=requir
 async function client(){
   const nodes=new Map(),listeners={},windowEvents={};let socket;
   const node=id=>{if(!nodes.has(id))nodes.set(id,{id,dataset:{},innerHTML:'',textContent:'',value:'',open:false,children:[],classList:{add(){},remove(){},toggle(){}},setAttribute(){},removeAttribute(){},focus(){},showModal(){this.open=true;},close(){this.open=false;},addEventListener(name,fn){this.events??={};this.events[name]=fn;},replaceChildren(){this.children=[];},append(...children){this.children.push(...children);}});return nodes.get(id);};
-  const profile={id:'qa',name:'ทดสอบ',deck:C.starter(),deckName:'เรือนร้าง',wins:0,matches:0};
+  const profile=require('../card-progress.js').migrate({id:'qa',name:'ทดสอบ',deck:C.starter(),deckName:'เรือนร้าง',wins:0,matches:0});
   class Socket{static OPEN=1;constructor(){socket=this;this.readyState=1;this.sent=[];}send(text){this.sent.push(JSON.parse(text));}close(){this.readyState=3;}}
   const document={getElementById:node,activeElement:null,querySelectorAll:()=>[],body:{classList:{toggle(){}}},addEventListener:(type,fn)=>listeners[type]=fn,createElement:()=>node('chatline'),createTextNode:s=>s};
   const location={hash:'',protocol:'http:',host:'qa',reload(){}};
-  const window={NativeCards:C,addEventListener:(name,fn)=>windowEvents[name]=fn,scrollTo(){}};
+  const window={NativeCards:C,NativeContent:require('../card-content.js'),addEventListener:(name,fn)=>windowEvents[name]=fn,scrollTo(){}};
   vm.runInNewContext(fs.readFileSync('card-client.js','utf8'),{window,document,location,WebSocket:Socket,fetch:async()=>({ok:true,json:async()=>profile}),setTimeout:()=>1,clearTimeout(){},setInterval(){},Date,console});await new Promise(r=>setImmediate(r));socket.onopen();
   const message=msg=>socket.onmessage({data:JSON.stringify(msg)});message({type:'hello',profile,queued:false,chat:[],online:1});
   const click=(key,dataset={})=>listeners.click({target:{closest:selector=>selector===key?{dataset,disabled:false}:null}});
@@ -31,4 +31,13 @@ test('all five illustration atlases exist and no retired game code is referenced
   const html=fs.readFileSync('index.html','utf8');assert.doesNotMatch(html,/phaser|rpg-client|artillery|fashion-catalog/);
   for(const f of Object.keys(C.factions)){const buf=fs.readFileSync('assets/cards/'+f+'.png');assert.equal(buf.toString('hex',0,8),'89504e470d0a1a0a');assert.ok(buf.readUInt32BE(16)>=1000);assert.ok(buf.readUInt32BE(20)>=800);assert.ok(fs.readFileSync('assets/cards/'+f+'.prompt.txt','utf8').includes('20 DISTINCT'));}
   for(const match of html.matchAll(/(?:src|href)="([^"#][^"]*)"/g)){const src=match[1];if(!src.startsWith('http'))assert.ok(fs.existsSync(src),src);}
+});
+test('all progression surfaces render and pack results reveal the actual five server cards',async()=>{
+  const c=await client();for(const [view,text]of [['journey','เส้นทางผู้ผูกวิญญาณ'],['ritual','พิธีเรียกภูติ'],['progress','ภารกิจและสายสัมพันธ์'],['online','ลานประลองออนไลน์'],['history','บันทึกการประลอง'],['shop','ของแต่งแห่งแสงโคม'],['account','บัญชีและการกู้คืน']]){c.click('[data-view]',{view});assert.ok(c.node('main').innerHTML.includes(text),view);}
+  c.click('[data-view]',{view:'ritual'});c.click('[data-pack]',{pack:'fire'});const command=c.socket.sent.at(-1);assert.equal(command.type,'pack');assert.equal(command.faction,'fire');assert.ok(command.request.length>=8);
+  const p=JSON.parse(JSON.stringify(c.profile)),result=require('../card-progress.js').openPack(p,'fire','client-pack-result',()=>.1);c.message({type:'profile',profile:p,result,message:'สำเร็จ'});assert.equal(c.node('card-dialog').open,true);assert.match(c.node('card-detail').innerHTML,/วงอาคมกำลังรวมตัว/);c.click('#reveal-pack');assert.equal((c.node('card-detail').innerHTML.match(/data-inspect=/g)||[]).length,5);assert.ok(result.cards.every(item=>c.node('card-detail').innerHTML.includes(C.byId[item.id].name)));
+});
+test('unowned cards cannot enter a draft and co-op observers cannot issue turn commands',async()=>{
+  const c=await client(),p=JSON.parse(JSON.stringify(c.profile));p.owned={g001:3};c.message({type:'profile',profile:p});c.click('[data-view]',{view:'deck'});c.click('[data-remove]',{remove:'g001'});const before=c.node('main').innerHTML;c.click('[data-add]',{add:'g040'});assert.equal(c.node('main').innerHTML,before);
+  const g=D.create([{id:'team',name:'ทีม',deck:C.starter()},{id:'bot',name:'บอส',deck:C.starter()}],1),room={...D.view(g,0),id:'team-room',mode:'coop',canAct:false,controllerName:'เพื่อน',deadline:Date.now()+90000,targets:{}};c.message({type:'room',room});assert.match(c.node('main').innerHTML,/ตาของ เพื่อน/);const n=c.socket.sent.length;c.click('#end-turn');assert.equal(c.socket.sent.length,n);
 });

@@ -10,28 +10,30 @@ const units=(g,s,n)=>living(g.players[s]).filter(u=>num(u)===n&&awake(g,u));
 const low=list=>list.slice().sort((a,b)=>a.hp-b.hp)[0];
 const wounded=list=>list.slice().sort((a,b)=>(b.maxHp-b.hp)-(a.maxHp-a.hp))[0];
 function log(g,text){g.log.push(text);if(g.log.length>35)g.log.shift();}
-function heal(u,n){if(u)u.hp=Math.min(u.maxHp,u.hp+n);}
-function healPlayer(g,s,n){g.players[s].hp=Math.min(30,g.players[s].hp+n);}
+function heal(g,u,n){if(u){const actual=Math.max(0,Math.min(n,u.maxHp-u.hp));u.hp+=actual;g.metrics[u.owner].healing+=actual;}}
+function healPlayer(g,s,n){const p=g.players[s],actual=Math.max(0,Math.min(n,(p.maxHp||30)-p.hp));p.hp+=actual;g.metrics[s].healing+=actual;}
 function boost(g,u,n,duration=2){if(u)u.buffs.push({n,until:g.turn+duration});}
-function shield(g,u){if(!u)return;u.shield=2;if(num(u)===90&&awake(g,u))boost(g,u,1,g.active===u.owner?2:1);}
+function shield(g,u){if(!u)return;g.metrics[u.owner].shields++;u.shield=2;if(num(u)===90&&awake(g,u))boost(g,u,1,g.active===u.owner?2:1);}
 function hurt(g,u,n,kind='ability',source=null){
   if(!u||u.hp<=0)return 0;
+  const initial=n;
   if(awake(g,u)){
     if(kind==='ability'&&num(u)===52)n--;
     if(kind==='attack'&&num(u)===62&&u.hp===u.maxHp)n--;
   }
   if(kind==='ability'&&u.shield&&units(g,u.owner,91).some(a=>a!==u))n--;
   n=Math.max(0,n);if(n&&u.shield){n=Math.max(0,n-u.shield);u.shield=0;}
-  const dealt=Math.min(u.hp,n);u.hp-=n;
+  const dealt=Math.min(u.hp,n);g.metrics[op(u.owner)].damage+=Math.max(0,dealt);g.metrics[u.owner].blocked+=Math.max(0,initial-n);u.hp-=n;
   if(u.hp<=0){u.killer=source;u.deathKind=kind;if(kind==='attack'&&units(g,u.owner,16).some(a=>a!==u)&&g.players[u.owner].savedAt!==g.turn){g.players[u.owner].savedAt=g.turn;u.hp=1;log(g,'ยายเฝ้าเรือนช่วยเพื่อนให้เหลือชีวิต 1');}}
   return dealt;
 }
 function hurtPlayer(g,s,n,kind='ability'){
-  const p=g.players[s];if(n<=0)return 0;
+  const p=g.players[s];if(n<=0)return 0;const initial=n;
   if(kind==='cost'||kind==='fatigue'){const dealt=Math.min(Math.max(0,p.hp),n);p.hp-=n;return dealt;}
   if(kind==='ability'&&units(g,s,99).length&&p.preventAt!==g.turn){p.preventAt=g.turn;n=Math.max(0,n-2);}
+  g.metrics[s].blocked+=initial-n;
   const guard=units(g,s,78)[0];if(guard&&p.redirectAt!==g.turn&&n>0){p.redirectAt=g.turn;hurt(g,guard,n,kind);return 0;}
-  const dealt=Math.min(Math.max(0,p.hp),n);p.hp-=n;return dealt;
+  const dealt=Math.min(Math.max(0,p.hp),n);p.hp-=n;g.metrics[op(s)].damage+=dealt;return dealt;
 }
 function hand(g,s,id){const p=g.players[s];if(p.hand.length>=10){p.grave.push(id);log(g,`${p.name} มือเต็ม การ์ดถูกส่งลงสุสาน`);}else p.hand.push({uid:'h'+g.next++,card:id});}
 function draw(g,s,n=1){const p=g.players[s];for(let i=0;i<n;i++){const id=p.deck.shift();if(id)hand(g,s,id);else{p.fatigue++;hurtPlayer(g,s,p.fatigue,'fatigue');log(g,`${p.name} เด็คหมด รับความเหนื่อยล้า ${p.fatigue}`);}}}
@@ -49,10 +51,10 @@ function settle(g){
       const p=g.players[s],dead=p.board.filter(u=>u.hp<=0);p.board=p.board.filter(u=>u.hp>0);
       for(const u of dead){
         if(u.card!=='wisp')p.grave.push(u.card);log(g,info(u).name+' กลับสู่สุสาน');
-        units(g,s,8).forEach(()=>healPlayer(g,s,1));units(g,s,69).forEach(a=>heal(a,1));if(u.card==='wisp')units(g,s,19).forEach(()=>hurtPlayer(g,op(s),1));
+        units(g,s,8).forEach(()=>healPlayer(g,s,1));units(g,s,69).forEach(a=>heal(g,a,1));if(u.card==='wisp')units(g,s,19).forEach(()=>hurtPlayer(g,op(s),1));
         if(u.sealed>=g.turn)continue;
         switch(num(u)){
-          case 2:heal(wounded(living(p)),2);break;
+          case 2:heal(g,wounded(living(p)),2);break;
           case 3:spawn(g,s,'wisp');break;
           case 11:retrieve(g,s,1);break;
           case 24:if(u.deathKind==='attack')hurt(g,find(g,u.killer),2);break;
@@ -86,11 +88,11 @@ function enter(g,s,u,t){
     case 1:healPlayer(g,s,1);break;
     case 4:shield(g,t);break;
     case 7:if(allies().some(a=>info(a).faction==='wood'))spawn(g,s,'wisp');break;
-    case 9:heal(t,3);break;
+    case 9:heal(g,t,3);break;
     case 13:spawn(g,s,'wisp');spawn(g,s,'wisp');break;
     case 15:draw(g,s,p.hp===30?2:1);break;
     case 18:revive(g,s,2,'wood');break;
-    case 20:while(p.board.length<5)spawn(g,s,'wisp');living(p).forEach(a=>heal(a,3));break;
+    case 20:while(p.board.length<5)spawn(g,s,'wisp');living(p).forEach(a=>heal(g,a,3));break;
     case 21:if(allies().some(a=>info(a).faction==='fire'))shield(g,u);break;
     case 23:if(p.deck.length&&C.byId[p.deck[0]].cost>p.maxMana)p.deck.push(p.deck.shift());break;
     case 26:hurt(g,t,1);break;
@@ -100,12 +102,12 @@ function enter(g,s,u,t){
     case 33:hurt(g,t,3);break;
     case 37:allies().filter(a=>info(a).faction==='fire').forEach(a=>shield(g,a));break;
     case 40:foes().forEach(a=>hurt(g,a,2));shield(g,u);break;
-    case 42:heal(t,1);break;
+    case 42:heal(g,t,1);break;
     case 44:if(p.deck.length&&C.byId[p.deck[0]].faction==='water')draw(g,s);break;
     case 46:boost(g,t,-1,1);break;
     case 47:case 53:if(t)t.frozen=g.turn+1;break;
     case 48:if(t){bounce(g,t);healPlayer(g,s,2);}break;
-    case 51:living(p).forEach(a=>heal(a,1));break;
+    case 51:living(p).forEach(a=>heal(g,a,1));break;
     case 54:bounce(g,t);break;
     case 56:if(t&&t.shield){t.shield=0;shield(g,low(allies())||u);}break;
     case 57:foes().sort((a,b)=>a.hp-b.hp).slice(0,2).forEach(a=>a.frozen=g.turn+1);break;
@@ -139,7 +141,7 @@ function enter(g,s,u,t){
 function startTurn(g,s,first=false){g.active=s;const p=g.players[s];p.maxMana=Math.min(8,p.maxMana+1);p.mana=p.maxMana;p.board.forEach(u=>{u.sleep=false;u.attacks=0;u.direct=0;u.buffs=u.buffs.filter(b=>b.until>=g.turn);});units(g,s,98).forEach(()=>shield(g,low(living(p))));if(!first)draw(g,s);settle(g);}
 function create(players,seed=Date.now()){
   if(!Array.isArray(players)||players.length!==2)throw Error('ต้องมีผู้เล่นสองฝ่าย');
-  const decks=players.map(p=>C.validateDeck(p.deck));const g={players:[],seed:(seed>>>0)||1,next:1,turn:1,active:0,phase:'playing',winner:null,revision:0,log:['คืนปลุกวิญญาณเริ่มขึ้น · ผู้เล่นแรกไม่จั่วในเทิร์นแรก']};
+  const decks=players.map(p=>C.validateDeck(p.deck));const g={players:[],seed:(seed>>>0)||1,next:1,turn:1,active:0,phase:'playing',winner:null,revision:0,metrics:Array.from({length:2},()=>({damage:0,healing:0,blocked:0,summons:0,attacks:0,shields:0,played:{},factions:{}})),log:['คืนปลุกวิญญาณเริ่มขึ้น · ผู้เล่นแรกไม่จั่วในเทิร์นแรก']};
   g.players=players.map((p,i)=>({id:p.id,name:p.name,hp:30,mana:0,maxMana:0,hand:[],deck:shuffled(g,decks[i]),grave:[],board:[],fatigue:0}));
   draw(g,0,5);draw(g,1,5);startTurn(g,0,true);return g;
 }
@@ -148,13 +150,13 @@ function play(g,s,handUid,targetUid=null){
   assertTurn(g,s);const p=g.players[s],ix=p.hand.findIndex(c=>c.uid===handUid);if(ix<0)throw Error('ไม่มีการ์ดใบนี้ในมือ');const card=C.byId[p.hand[ix].card];
   if(p.board.length>=5)throw Error('สนามเต็มแล้ว สูงสุด 5 ตัว');if(card.cost>p.mana)throw Error('พลังอาคมไม่พอ');
   const eligible=targets(g,s,card.id);if(targetUid!==null&&!eligible.includes(targetUid))throw Error('เป้าหมายไม่ถูกต้อง');const target=find(g,targetUid||eligible[0]);
-  p.mana-=card.cost;p.hand.splice(ix,1);const u=spawn(g,s,card.id);log(g,p.name+' อัญเชิญ '+card.name);enter(g,s,u,target);settle(g);g.revision++;return g;
+  g.metrics[s].summons++;g.metrics[s].played[card.id]=(g.metrics[s].played[card.id]||0)+1;g.metrics[s].factions[card.faction]=(g.metrics[s].factions[card.faction]||0)+1;p.mana-=card.cost;p.hand.splice(ix,1);const u=spawn(g,s,card.id);log(g,p.name+' อัญเชิญ '+card.name);enter(g,s,u,target);settle(g);g.revision++;return g;
 }
 function canAttack(g,u){return g.phase==='playing'&&g.active===u.owner&&u.hp>0&&!u.sleep&&!frozen(g,u)&&u.attacks<(num(u)===38&&awake(g,u)?2:1)&&attackPower(g,u)>0&&(living(g.players[op(u.owner)]).length>0||!u.direct);}
 function attack(g,s,uid,targetUid){
   assertTurn(g,s);const a=find(g,uid);if(!a||a.owner!==s||!canAttack(g,a))throw Error('ภูตินี้ยังโจมตีไม่ได้');const direct=targetUid==='player',b=direct?null:find(g,targetUid);
   if(direct&&(living(g.players[op(s)]).length||a.direct))throw Error('ต้องกำจัดภูติศัตรูก่อน');if(!direct&&(!b||b.owner===s||b.hp<=0))throw Error('เป้าหมายโจมตีไม่ถูกต้อง');
-  a.attacks++;log(g,info(a).name+' โจมตี '+(direct?g.players[op(s)].name:info(b).name));
+  g.metrics[s].attacks++;a.attacks++;log(g,info(a).name+' โจมตี '+(direct?g.players[op(s)].name:info(b).name));
   if(direct){a.direct++;const dealt=hurtPlayer(g,op(s),attackPower(g,a)+(num(a)===25&&awake(g,a)?1:0),'attack');if(num(a)===67&&awake(g,a))healPlayer(g,s,Math.min(3,dealt));}
   else{
     const power=attackPower(g,a)+(awake(g,a)&&((num(a)===28&&b.hp<b.maxHp)||(num(a)===50&&frozen(g,b)))?1:0),counter=attackPower(g,b),oldHp=b.hp,wasFrozen=frozen(g,b);
@@ -162,7 +164,7 @@ function attack(g,s,uid,targetUid){
     if(a.hp>0&&num(a)===36&&awake(g,a)&&a.growth<3){a.growth++;a.atk++;}
     if(b.hp>0&&num(b)===36&&awake(g,b)&&b.growth<3){b.growth++;b.atk++;}
     if(b.hp<=0){
-      if(awake(g,a)){if(num(a)===22)heal(a,1);if(num(a)===34)hurtPlayer(g,op(s),2);if(num(a)===59&&wasFrozen)hurtPlayer(g,op(s),Math.max(0,power-oldHp));}
+      if(awake(g,a)){if(num(a)===22)heal(g,a,1);if(num(a)===34)hurtPlayer(g,op(s),2);if(num(a)===59&&wasFrozen)hurtPlayer(g,op(s),Math.max(0,power-oldHp));}
       units(g,s,39).forEach(u=>{if(u.triggerAt!==g.turn){u.triggerAt=g.turn;draw(g,s);}});
       units(g,s,95).forEach(u=>{if(u.triggerAt!==g.turn){u.triggerAt=g.turn;u.triggerCount=0;}if(u.triggerCount<2){u.triggerCount++;healPlayer(g,s,1);}});
     }
@@ -173,9 +175,9 @@ function end(g,s){
   assertTurn(g,s);const p=g.players[s];
   for(const u of living(p).slice()){if(!awake(g,u))continue;switch(num(u)){
     case 5:if(living(p).length>=3)healPlayer(g,s,1);break;
-    case 6:heal(wounded(living(p).filter(a=>a!==u)),1);break;
+    case 6:heal(g,wounded(living(p).filter(a=>a!==u)),1);break;
     case 14:living(p).filter(a=>a.card==='wisp').forEach(a=>shield(g,a));break;
-    case 17:living(p).forEach(a=>heal(a,2));break;
+    case 17:living(p).forEach(a=>heal(g,a,2));break;
     case 55:if(living(g.players[op(s)]).some(a=>frozen(g,a)))draw(g,s);break;
     case 58:if(living(p).filter(a=>info(a).faction==='water').length>=3)healPlayer(g,s,2);break;
     case 96:if(living(p).some(a=>a.shield>0))draw(g,s);break;
@@ -183,7 +185,7 @@ function end(g,s){
   settle(g);if(g.phase==='playing'){g.turn++;startTurn(g,op(s));log(g,'เทิร์น '+g.turn+' · '+g.players[g.active].name);}g.revision++;return g;
 }
 function concede(g,s){if(g.phase!=='playing')throw Error('การต่อสู้จบแล้ว');g.winner=op(s);g.phase='finished';g.revision++;log(g,g.players[s].name+' ยอมแพ้');}
-function view(g,s){return {turn:g.turn,active:g.active,phase:g.phase,winner:g.winner,revision:g.revision,you:s,log:g.log.slice(-12),players:g.players.map((p,i)=>({id:p.id,name:p.name,hp:Math.max(0,p.hp),mana:p.mana,maxMana:p.maxMana,handCount:p.hand.length,deckCount:p.deck.length,grave:p.grave.slice(),board:p.board.map(u=>({...u,power:attackPower(g,u),ready:canAttack(g,u),frozen:frozen(g,u),sealed:u.sealed>=g.turn})),...(i===s?{hand:p.hand.map(c=>({...c})),revealed:p.revealed&&p.revealed.until>=g.turn?p.revealed.card:null}:{})}))};}
+function view(g,s){return {turn:g.turn,active:g.active,phase:g.phase,winner:g.winner,revision:g.revision,you:s,log:g.log.slice(-12),players:g.players.map((p,i)=>({id:p.id,name:p.name,hp:Math.max(0,p.hp),maxHp:p.maxHp||30,mana:p.mana,maxMana:p.maxMana,handCount:p.hand.length,deckCount:p.deck.length,grave:p.grave.slice(),board:p.board.map(u=>({...u,power:attackPower(g,u),ready:canAttack(g,u),frozen:frozen(g,u),sealed:u.sealed>=g.turn})),...(i===s?{hand:p.hand.map(c=>({...c})),revealed:p.revealed&&p.revealed.until>=g.turn?p.revealed.card:null}:{})}))};}
 function bot(g,s){
   assertTurn(g,s);const p=g.players[s];let steps=0;
   while(g.phase==='playing'&&steps++<30){
@@ -194,5 +196,5 @@ function bot(g,s){
   }
   if(g.phase==='playing')end(g,s);
 }
-return {create,play,attack,end,concede,view,bot,targets,attackPower,canAttack};
+return {create,play,attack,end,concede,view,bot,targets,attackPower,canAttack,spawn,revive};
 });
