@@ -5,23 +5,66 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const Life = require('../life-engine.js');
 const LifeParty = require('../life-party.js');
+const LifeMap = require('../life-map.js');
 const script = fs.readFileSync(require.resolve('../life-client.js'), 'utf8');
 const key = 'thainative-life-demo-v1';
 
 function client(store = new Map(), denySave = false, life = Life, options = {}) {
   const nodes = new Map(), events = {};
-  const sockets=[],timers=[];
+  const sockets=[],timers=[],animations=[];
   class Socket { constructor(url){this.url=url;this.readyState=0;this.sent=[];sockets.push(this);} open(){this.readyState=1;this.onopen();} send(data){this.sent.push(JSON.parse(data));} receive(data){this.onmessage({data:JSON.stringify(data)});} close(){this.readyState=3;if(this.onclose)this.onclose();} }
   function node(id) {
-    if (!nodes.has(id)) nodes.set(id, { innerHTML:'', value:'', textContent:'', classList:{add(){}, remove(){}}, focus(){}, showModal(){}, close(){} });
+    if (!nodes.has(id)) {
+      const el={ innerHTML:'', value:'', textContent:'', style:{setProperty(){}}, classList:{add(){}, remove(){}, toggle(){}}, focus(){}, showModal(){}, close(){} };
+      if(id==='map-token'&&options.animation)el.animate=(frames,options)=>{const a={frames,options,cancelled:false,cancel(){this.cancelled=true;}};animations.push(a);return a;};
+      nodes.set(id,el);
+    }
     return nodes.get(id);
   }
   const document = { getElementById:node, addEventListener:(name,fn)=>events[name]=fn, querySelectorAll:()=>[], querySelector:()=>null };
   const localStorage = { getItem:k=>store.get(k) ?? null, setItem:(k,v)=>{if(denySave)throw new Error('unavailable');store.set(k,v);}, removeItem:k=>store.delete(k) };
   const session=new Map(), sessionStorage={getItem:k=>session.get(k)||null,setItem:(k,v)=>session.set(k,v),removeItem:k=>session.delete(k)};
-  vm.runInNewContext(script, { document, Life:life, LifeParty, localStorage,sessionStorage,WebSocket:Socket,location:{protocol:'http:',host:'localhost'},confirm:()=>options.confirm!==false, setTimeout:fn=>{timers.push(fn);return timers.length;}, clearTimeout(){} });
-  return { node, events, sockets,session,timers,click:(dataset={},id='')=>events.click({target:{closest:()=>({dataset,id})}}), submit:(id='start-form')=>events.submit({target:{id},preventDefault(){}}) };
+  vm.runInNewContext(script, { document, Life:life, LifeParty, LifeMap, localStorage,sessionStorage,WebSocket:Socket,location:{protocol:'http:',host:'localhost'},matchMedia:query=>({matches:!!options.reducedMotion&&query.includes('prefers-reduced-motion')}),confirm:()=>options.confirm!==false, setTimeout:fn=>{timers.push(fn);return timers.length;}, clearTimeout(){} });
+  return { node, events, sockets,session,timers,animations,click:(dataset={},id='')=>events.click({target:{closest:()=>({dataset,id})}}), submit:(id='start-form')=>events.submit({target:{id},preventDefault(){}}) };
 }
+
+test('walking is a cancellable preview, then opens a unique NPC scene without spending time',()=>{
+  const store=new Map(),c=client(store,false,Life,{animation:true});c.node('player-name').value='ดาว';c.submit();
+  const before=store.get(key);c.click({location:'temple'});assert.equal(store.get(key),before);assert.equal(c.animations.length,1);assert.equal(c.node('place-actions').inert,true);
+  c.click({action:'rest'});c.click({},'end-week');assert.equal(store.get(key),before);
+  assert.doesNotMatch(c.node('app').innerHTML,/interior-title/);
+  let sawFerry=false;
+  for(let i=0;i<c.animations.length&&i<30;i++){if(c.node('travel-status').textContent.includes('ข้ามแม่น้ำ'))sawFerry=true;c.animations[i].onfinish();}
+  assert.equal(sawFerry,true);
+  assert.equal(c.animations.at(-1).frames.at(-1).left,LifeMap.positions.temple.x+'%');assert.match(c.node('app').innerHTML,/interior-title/);assert.match(c.node('app').innerHTML,/คุณมาลี/);assert.match(c.node('app').innerHTML,/เที่ยวชมวัดอรุณ/);assert.equal(c.node('place-actions').inert,false);assert.equal(store.get(key),before);
+  c.click({location:'market'});assert.doesNotMatch(c.node('app').innerHTML,/interior-title/);assert.equal(store.get(key),before);
+  c.click({},'back-map');assert.doesNotMatch(c.node('app').innerHTML,/interior-title/);
+  c.click({location:'market'});const prior=c.animations.at(-1);c.click({},'mode-menu');assert.equal(prior.cancelled,true);prior.onfinish();assert.match(c.node('app').innerHTML,/อยากใช้ชีวิตแบบไหน/);assert.equal(store.get(key),before);
+});
+
+test('online turn changes cancel stale movement and cannot open an old interior',()=>{
+  const c=client(new Map(),false,Life,{animation:true});c.click({},'mode-menu');c.click({mode:'online'});
+  c.node('online-name').value='เอ';c.node('online-career').value='office';c.node('online-gender').value='female';c.click({},'online-create');
+  const ws=c.sockets[0];ws.open();ws.receive({type:'welcome',token:'a'.repeat(64),resumed:false});
+  const game=Life.create('เอ',null,'office');const room={phase:'playing',code:'ABCD23',self:'p1',host:'p1',current:'p1',players:[{id:'p1',name:'เอ',gender:'female',game,connected:true},{id:'p2',name:'บี',game:Life.create('บี',null,'rider'),connected:true}],revision:1,objective:{teamIntact:true}};
+  ws.receive({type:'state',room});c.click({location:'market'});const animation=c.animations.at(-1);assert.ok(animation);
+  room.current='p2';room.revision++;ws.receive({type:'state',room});assert.equal(animation.cancelled,true);animation.onfinish();assert.doesNotMatch(c.node('app').innerHTML,/interior-title/);assert.match(c.node('app').innerHTML,/รอเพื่อนเล่น/);
+});
+
+test('reduced motion opens the destination immediately without starting an animation',()=>{
+  const c=client(new Map(),false,Life,{animation:true,reducedMotion:true});c.node('player-name').value='เอ';c.submit();c.click({location:'temple'});
+  assert.equal(c.animations.length,0);assert.match(c.node('app').innerHTML,/interior-title/);assert.match(c.node('app').innerHTML,/คุณมาลี/);
+});
+
+test('each destination opens its own NPC greeting and correct atlas tile',()=>{
+  const c=client();c.node('player-name').value='ดาว';c.submit();
+  for(const [i,location] of Life.locations.entries()){
+    c.click({location:location.id});const html=c.node('app').innerHTML;
+    assert.match(html,/interior-title/);assert.match(html,/npc-dialog/);
+    assert.ok(html.includes(`background-position:${(i%3)*50}% ${Math.floor(i/3)*100/3}%`),location.id);
+    c.click({},'back-map');
+  }
+});
 
 test('life UI starts, escapes player names, completes landmark activity and resumes saved progress',()=>{
   const store=new Map(), c=client(store);
@@ -92,7 +135,9 @@ test('local co-op saves separately, switches turns and can resume without touchi
   const before=store.get(key);c.click({},'mode-menu');c.click({mode:'local'});
   for(const [i,name,career] of [[1,'ฟ้า','office'],[2,'ดิน','rider']]){c.node('party-name-'+i).value=name;c.node('party-career-'+i).value=career;c.node('party-gender-'+i).value='female';}
   c.submit('party-form');assert.match(c.node('app').innerHTML,/ฟ้า/);assert.equal(store.get(key),before);
+  c.click({location:'office'});assert.match(c.node('app').innerHTML,/interior-title/);c.click({action:'officework'});assert.match(c.node('app').innerHTML,/interior-title/);
   c.click({},'end-week');let saved=JSON.parse(store.get('thainative-life-party-v1'));assert.equal(saved.active,1);assert.match(c.node('app').innerHTML,/ดิน/);
+  assert.doesNotMatch(c.node('app').innerHTML,/interior-title/);
   c.click({},'mode-menu');c.click({},'party-resume');assert.match(c.node('app').innerHTML,/ดิน/);assert.equal(store.get(key),before);
   const other=client(store,false,Life,{confirm:false});other.click({},'mode-menu');other.click({mode:'local'});
   for(const i of [1,2]){other.node('party-name-'+i).value='ใหม่'+i;other.node('party-career-'+i).value='office';other.node('party-gender-'+i).value='male';}

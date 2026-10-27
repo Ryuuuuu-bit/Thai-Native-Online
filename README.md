@@ -4,7 +4,9 @@ Open `/life.html` for the Bangkok life-simulation demo. Create a character and c
 
 The mode menu offers solo, a local co-op game with an AI teammate, local hotseat for 2–4 people, and online co-op. Online players can create a six-character room code for 2–4 players or enter a two-player matchmaking queue. Each player has an individual wallet and one turn per week; after 20 weeks the team wins if its combined balance is nonnegative and every player has at least 30 energy. Once the game starts, a teammate leaving or failing to reconnect in time prevents a team win. The server validates turn, revision and game actions. A disconnected player can reconnect from the same browser tab within 60 seconds.
 
-Solo and local games have separate browser-local saves. Online rooms and queues are kept only in server memory and are lost on a server restart or redeploy; online games do not yet have account/cloud saves or cross-device recovery. Matchmaking needs another player searching at the same time. The demo does not yet offer animated travel.
+Choosing a destination previews a walking route on the illustrated map, with a ferry for the river crossing, then opens its scene and NPC greeting. Movement is visual: travel time and location are applied only when an activity succeeds. Routes are approximate hand-placed waypoints on a flat illustration; this is not free movement or accurate collision with all streets and buildings. Motion is skipped for reduced-motion preferences. Location previews and animations are local to each player; successful online activities remain server-authoritative.
+
+Solo and local games have separate browser-local saves. Online rooms and queues are kept only in server memory and are lost on a server restart or redeploy; online games do not yet have account/cloud saves or cross-device recovery. Matchmaking needs another player searching at the same time.
 
 The city and character illustrations are original generated assets; the high-angle cartoon-map concept is generic and no reference-game assets are included.
 
