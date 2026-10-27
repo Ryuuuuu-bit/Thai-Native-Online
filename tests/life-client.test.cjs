@@ -7,7 +7,7 @@ const Life = require('../life-engine.js');
 const script = fs.readFileSync(require.resolve('../life-client.js'), 'utf8');
 const key = 'thainative-life-demo-v1';
 
-function client(store = new Map(), denySave = false) {
+function client(store = new Map(), denySave = false, life = Life) {
   const nodes = new Map(), events = {};
   function node(id) {
     if (!nodes.has(id)) nodes.set(id, { innerHTML:'', value:'', textContent:'', classList:{add(){}, remove(){}}, focus(){}, showModal(){}, close(){} });
@@ -15,7 +15,7 @@ function client(store = new Map(), denySave = false) {
   }
   const document = { getElementById:node, addEventListener:(name,fn)=>events[name]=fn, querySelectorAll:()=>[], querySelector:()=>null };
   const localStorage = { getItem:k=>store.get(k) ?? null, setItem:(k,v)=>{if(denySave)throw new Error('unavailable');store.set(k,v);}, removeItem:k=>store.delete(k) };
-  vm.runInNewContext(script, { document, Life, localStorage, confirm:()=>true, setTimeout:()=>0, clearTimeout(){} });
+  vm.runInNewContext(script, { document, Life:life, localStorage, confirm:()=>true, setTimeout:()=>0, clearTimeout(){} });
   return { node, events, click:(dataset={},id='')=>events.click({target:{closest:()=>({dataset,id})}}), submit:()=>events.submit({target:{id:'start-form'},preventDefault(){}}) };
 }
 
@@ -59,4 +59,26 @@ test('life UI displays mission progress and an automatic one-time reward, includ
   assert.match(c.node('app').innerHTML,/รับรางวัล 350 ฿ แล้ว/);
   const afterReward=JSON.parse(store.get(key)).game.money;
   c.click({action:'shop'});assert.equal(JSON.parse(store.get(key)).game.money,afterReward+650);
+});
+
+test('career selection and free random roll show actual passives before starting and preserve the entered name',()=>{
+  const store=new Map(), randomCareer=()=>Life.careers.find(c=>c.id==='minimart');
+  const c=client(store,false,{...Life,randomCareer});
+  assert.match(c.node('app').innerHTML,/เลือกอาชีพหรือจุดเริ่มต้น/);
+  assert.match(c.node('app').innerHTML,/สุ่มอาชีพฟรี/);
+  assert.doesNotMatch(c.node('app').innerHTML,/เป้าหมายชีวิตของฉัน/);
+  c.node('player-name').value='ดาว';c.click({},'random-career');
+  assert.match(c.node('career-detail').innerHTML,/พนักงานร้านสะดวกซื้อ/);
+  assert.match(c.node('career-detail').innerHTML,/ข้อดี/);assert.match(c.node('career-detail').innerHTML,/ข้อเสีย/);
+  c.submit();const saved=JSON.parse(store.get(key)).game;assert.equal(saved.name,'ดาว');assert.equal(saved.career,'minimart');
+  c.click({location:'minimart'});assert.match(c.node('app').innerHTML,/\+700 ฿/);assert.match(c.node('app').innerHTML,/-23/);
+  c.click({action:'minimartjob'});assert.equal(JSON.parse(store.get(key)).game.money,saved.money+700);
+});
+
+test('temporary shelter is labelled honestly and old saves retain neutral values',()=>{
+  const s=new Map(),c=client(s);c.node('player-name').value='นก';c.click({career:'unhoused'});c.submit();
+  assert.match(c.node('app').innerHTML,/ที่พักชั่วคราว/);assert.match(c.node('app').innerHTML,/ค่าที่พักชั่วคราว 300 ฿/);
+  const old=Life.create('ผู้เล่นเดิม','balance');const store=new Map([[key,JSON.stringify({game:old,gender:'female'})]]),legacy=client(store);
+  assert.match(legacy.node('app').innerHTML,/เป้าหมาย: ชีวิตสมดุล/);assert.doesNotMatch(legacy.node('app').innerHTML,/Passive ประจำตัว/);
+  legacy.click({location:'market'});assert.match(legacy.node('app').innerHTML,/\+650 ฿/);
 });

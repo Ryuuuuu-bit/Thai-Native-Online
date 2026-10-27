@@ -2,6 +2,58 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const Life = require('../life-engine.js');
 
+test('careers offer clear benefits and drawbacks; random selection covers all roles', () => {
+  assert.equal(Life.careers.length, 7);
+  for (const [i, career] of Life.careers.entries()) {
+    assert.ok(career.good && career.bad && Life.goals.some(goal => goal.id === career.goal));
+    assert.equal(Life.randomCareer(() => (i + 0.5) / Life.careers.length).id, career.id);
+    const state = Life.create('ผู้เล่น', null, career.id);
+    assert.equal(state.career, career.id);
+    assert.equal(state.goal, career.goal);
+  }
+  assert.equal(Life.randomCareer(() => 2).id, Life.careers.at(-1).id);
+});
+
+test('career passives change actual actions, previews and affordability consistently', () => {
+  const effects = [
+    ['office', 'officework', {money:1700, energy:-35}],
+    ['minimart', 'minimartjob', {money:700, energy:-23}],
+    ['sales', 'shop', {money:800, happiness:-9}],
+    ['rider', 'delivery', {money:1100, energy:-40}],
+    ['creator', 'content', {fame:5, energy:-20}],
+    ['student', 'study', {skill:2, money:-450}]
+  ];
+  for (const [career, id, expected] of effects) {
+    const state = Life.create('ผู้เล่น', null, career), preview = Life.actionFor(state, id);
+    const result = Life.act(state, id);
+    assert.equal(result.ok, true, career);
+    for (const [key, delta] of Object.entries(expected)) {
+      assert.equal(preview[key], delta, `${career} preview ${key}`);
+      assert.equal(result.state[key], state[key] + delta, `${career} actual ${key}`);
+    }
+  }
+  const student = {...Life.create('นักเรียน', null, 'student'), money:400};
+  assert.match(Life.act(student, 'study').error, /เงิน/);
+  const office = {...Life.create('พนักงาน', null, 'office'), energy:30};
+  assert.match(Life.act(office, 'officework').error, /พลัง/);
+  assert.equal(Life.create('พนักงาน', null, 'office').skill, 3);
+  assert.equal(Life.actionFor(office, 'not-real'), undefined);
+});
+
+test('the unhoused role gets temporary lodging support; legacy saves remain neutral', () => {
+  const state = Life.create('ผู้เล่น', null, 'unhoused');
+  assert.equal(state.money, 800); assert.equal(state.energy, 60); assert.equal(Life.weekCost(state), 300);
+  assert.equal(Life.actionFor(state, 'rest').energy, 25);
+  assert.equal(Life.act(state, 'rest').state.energy, 85);
+  const end = Life.endWeek(state, () => 0);
+  assert.equal(end.state.money, 500);
+  assert.match(end.message, /ค่าที่พักชั่วคราว 300/);
+  const old = Life.create('ผู้เล่นเดิม', 'collection');
+  assert.equal(old.career, undefined); assert.equal(old.goal, 'collection'); assert.equal(Life.weekCost(old), 500);
+  assert.deepEqual(Life.actionFor(old, 'shop'), Life.actions.find(action => action.id === 'shop'));
+  assert.equal(Life.act(old, 'shop').state.money, old.money + 650);
+});
+
 test('travel and activity costs are applied atomically and invalid actions do not change the save', () => {
   const state = Life.create('น้อง', 'wealth');
   const result = Life.act(state, 'shop');

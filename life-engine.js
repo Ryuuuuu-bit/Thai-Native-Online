@@ -45,6 +45,35 @@
     { id: 'balance', name: 'ชีวิตสมดุล', description: 'จบเกมด้วยความสุข 80 พลัง 60 และเงินไม่ติดลบ', metric: 'happiness', target: 80 },
     { id: 'collection', name: 'นักสะสมแห่งกรุง', description: 'ช้อปแฟชันเก็บเป็นคอลเลกชัน', metric: 'collection', target: 10 }
   ];
+  const careers = [
+    { id: 'unhoused', name: 'ผู้ไม่มีที่พัก', icon: '🧳', good: 'ได้รับความช่วยเหลือค่าที่พักชั่วคราว 200 ฿ ต่อสัปดาห์ จ่ายเอง 300 ฿', bad: 'พักในที่พักชั่วคราวฟื้นพลังน้อยลง 5; เริ่มเงิน 800 ฿ และพลัง 60', goal: 'balance' },
+    { id: 'office', name: 'พนักงานออฟฟิศ', icon: '💼', good: 'เริ่มทักษะ 3 และงานออฟฟิศได้เงินเพิ่ม 200 ฿', bad: 'งานออฟฟิศใช้พลังเพิ่ม 10', goal: 'wealth' },
+    { id: 'minimart', name: 'พนักงานร้านสะดวกซื้อ', icon: '🏪', good: 'งานร้านสะดวกซื้อได้เงินเพิ่ม 200 ฿', bad: 'งานร้านสะดวกซื้อใช้พลังเพิ่ม 8', goal: 'wealth' },
+    { id: 'sales', name: 'เซลส์ขายของ', icon: '🤝', good: 'ช่วยงานร้านค้าได้เงินเพิ่ม 150 ฿', bad: 'ช่วยงานร้านค้าลดความสุขเพิ่ม 6', goal: 'wealth' },
+    { id: 'rider', name: 'ไรเดอร์', icon: '🛵', good: 'งานไรเดอร์ได้เงินเพิ่ม 200 ฿', bad: 'งานไรเดอร์ใช้พลังเพิ่ม 10', goal: 'wealth' },
+    { id: 'creator', name: 'ครีเอเตอร์', icon: '📸', good: 'ทำคอนเทนต์ได้ชื่อเสียงเพิ่ม 2', bad: 'ทำคอนเทนต์ใช้พลังเพิ่ม 5', goal: 'fame' },
+    { id: 'student', name: 'นักศึกษา', icon: '🎓', good: 'เรียนทักษะได้เพิ่มอีก 1 ขั้น', bad: 'เรียนทักษะเสียค่าเรียนเพิ่ม 100 ฿', goal: 'balance' }
+  ];
+  function randomCareer(rng = Math.random) {
+    const random = Number(rng());
+    return careers[Math.max(0, Math.min(careers.length - 1, Math.floor((Number.isFinite(random) ? random : 0) * careers.length)))];
+  }
+  function actionFor(state, id) {
+    const original = actions.find(action => action.id === id);
+    if (!original) return;
+    const action = { ...original };
+    switch (state?.career) {
+      case 'unhoused': if (id === 'rest') action.energy -= 5; break;
+      case 'office': if (id === 'officework') { action.money += 200; action.energy -= 10; } break;
+      case 'minimart': if (id === 'minimartjob') { action.money += 200; action.energy -= 8; } break;
+      case 'sales': if (id === 'shop') { action.money += 150; action.happiness -= 6; } break;
+      case 'rider': if (id === 'delivery') { action.money += 200; action.energy -= 10; } break;
+      case 'creator': if (id === 'content') { action.fame += 2; action.energy -= 5; } break;
+      case 'student': if (id === 'study') { action.skill += 1; action.money -= 100; } break;
+    }
+    return action;
+  }
+  const weekCost = state => state?.career === 'unhoused' ? 300 : 500;
   const missions = [
     { id: 'sidejobs', name: 'ภารกิจหาเงินค่าขนม', description: 'ทำงานพาร์ตไทม์ 2 ครั้ง', target: 2, reward: 350, actions: ['shop', 'delivery', 'officework', 'victoryjob', 'arcadejob', 'minimartjob'] },
     { id: 'sightseeing', name: 'เที่ยวกรุงสองมุม', description: 'เที่ยววัดอรุณ เสาชิงช้า หรือสวนลุมพินีให้ครบ 2 แห่ง', target: 2, reward: 350, actions: ['templevisit', 'swingvisit', 'park'], unique: true },
@@ -67,14 +96,16 @@
     { text: 'ข้าวเช้าพิเศษวันนี้เติมพลังให้เต็มที่', energy: 10 }
   ];
   const cap = n => Math.max(0, Math.min(100, n));
-  function create(name, goal) {
+  function create(name, goal, careerId) {
+    const career = careers.find(c => c.id === careerId);
     const state = {
       name: String(name || '').trim().slice(0, 20) || 'ชาวกรุง',
-      goal: goals.some(g => g.id === goal) ? goal : 'balance',
-      week: 1, hours: 40, money: 2600, energy: 80, happiness: 65,
-      skill: 0, fame: 0, collection: 0, location: 'home',
+      goal: career?.goal || (goals.some(g => g.id === goal) ? goal : 'balance'),
+      week: 1, hours: 40, money: careerId === 'unhoused' ? 800 : 2600, energy: careerId === 'unhoused' ? 60 : 80, happiness: 65,
+      skill: careerId === 'office' ? 3 : 0, fame: 0, collection: 0, location: 'home',
       finished: false, event: '', history: ['เริ่มต้นชีวิตใหม่กลางกรุงเทพ!']
     };
+    if (career) state.career = career.id;
     state.mission = mission(state);
     return state;
   }
@@ -86,7 +117,7 @@
   function fail(s, error) { return { ok: false, error, state: s }; }
   function act(s, id) {
     if (!valid(s)) return fail(s, 'เกมจบแล้วหรือข้อมูลเกมไม่ถูกต้อง');
-    const a = actions.find(x => x.id === id);
+    const a = actionFor(s, id);
     if (!a) return fail(s, 'ไม่พบกิจกรรมนี้');
     const travel = s.location === a.location ? 0 : 2;
     if (s.hours < a.hours + travel) return fail(s, 'เวลาไม่พอ ลองเลือกกิจกรรมอื่นหรือจบสัปดาห์');
@@ -112,8 +143,9 @@
     if (!valid(s)) return fail(s, 'เกมจบแล้วหรือข้อมูลเกมไม่ถูกต้อง');
     const random = Number(rng());
     const event = events[Math.max(0, Math.min(events.length - 1, Math.floor((Number.isFinite(random) ? random : 0) * events.length)))];
-    const next = { ...s, money: s.money - 500 + (event.money || 0), energy: cap(s.energy + (event.energy || 0)), happiness: cap(s.happiness + (event.happiness || 0)), event: event.text };
-    const message = `สัปดาห์ ${s.week} จบ · ค่าเช่า 500 บาท · ${event.text}`;
+    const cost = weekCost(s), lodging = s.career === 'unhoused' ? 'ค่าที่พักชั่วคราว' : 'ค่าเช่า';
+    const next = { ...s, money: s.money - cost + (event.money || 0), energy: cap(s.energy + (event.energy || 0)), happiness: cap(s.happiness + (event.happiness || 0)), event: event.text };
+    const message = `สัปดาห์ ${s.week} จบ · ${lodging} ${cost} บาท · ${event.text}`;
     next.history = [message, ...s.history].slice(0, 20);
     if (s.week === 20) next.finished = true;
     else { next.week++; next.hours = 40; }
@@ -127,5 +159,5 @@
     const total = Math.max(0, Math.round(progress / goal.target * 100) + Math.round((s.energy + s.happiness) / 4) + s.skill * 2);
     return { score: total, title: success ? 'พิชิตเป้าหมายชีวิต!' : 'ชีวิตยังมีเรื่องให้ลุ้นต่อ', breakdown: `เป้าหมาย ${progress.toLocaleString('th-TH')} / ${goal.target.toLocaleString('th-TH')}${goal.id === 'balance' ? ' · พลังอย่างน้อย 60 · เงินไม่ติดลบ' : ''}`, success, progress, target: goal.target };
   }
-  return { create, act, endWeek, score, mission, locations, actions, goals };
+  return { create, act, endWeek, score, mission, randomCareer, actionFor, weekCost, locations, actions, goals, careers };
 });
