@@ -68,3 +68,17 @@ dialog{border-color:#80616d;background:#fffaf1}#toast{background:#684a5a;color:#
 @media(prefers-reduced-motion:reduce){.mode-list .choice{transition:none}}
 .map-token.ferry:after{content:'⛴';position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);font-size:28px;line-height:1;filter:drop-shadow(0 2px 1px #263b4766)}
 .walk-ready .map-token.walking.ferry .walking-sprite{animation:none}
+.career-male-ready .portrait.career-portrait.male,.career-female-ready .portrait.career-portrait.female{background-repeat:no-repeat;background-size:400% 200%;background-position:var(--career-x) var(--career-y)}
+.career-male-ready .portrait.career-portrait.male{background-image:url('assets/careers-male.png')}
+.career-female-ready .portrait.career-portrait.female{background-image:url('assets/careers-female.png')}
+.career-male-ready .portrait.career-portrait.male svg,.career-female-ready .portrait.career-portrait.female svg{visibility:hidden}
+.career-summary{grid-template-columns:66px minmax(0,1fr);align-items:start}.career-preview{grid-column:1;grid-row:1 / span 4;width:60px;height:80px;align-self:center}.career-preview .portrait{width:100%;height:100%}
+.party-player{grid-template-columns:50px minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr);align-items:center}.party-portrait{width:46px;height:62px}.online-portrait{width:68px;height:90px;float:right}.team-members .team-portrait,.team-members .team-portrait .portrait{display:inline-block;vertical-align:middle;width:24px;height:32px;padding:0;border:0;border-radius:0;background-color:transparent}
+.walk-ready .map-token:not(.walking) .walking-sprite{background-image:none}.walk-ready .map-token:not(.walking) .walking-sprite .chibi-avatar{display:block}.map-career-icon{position:absolute;top:-6px;right:-6px;display:grid;place-items:center;width:24px;height:24px;border:2px solid #835969;border-radius:50%;background:#fff7dc;font-size:13px;line-height:1}
+@media(max-width:620px){.party-player{grid-template-columns:50px minmax(0,1fr)}.party-player label{grid-column:2}.party-portrait{grid-column:1;grid-row:1 / span 3}}
+.avatar .portrait.career-portrait{width:36px;height:48px;margin:auto}
+.character-choice .chibi-avatar{width:96px;height:128px}.career-summary{grid-template-columns:112px minmax(0,1fr)}.career-preview{width:105px;height:140px}
+@media(max-width:620px){.character-choice .chibi-avatar{width:68px;height:91px}.career-summary{grid-template-columns:96px minmax(0,1fr)}.career-preview{width:90px;height:120px}}
+@media(max-width:620px){.character-choice{gap:4px;padding:5px}}
+.map-token.walking[data-walk-role] .walking-sprite{background-image:var(--career-walk);animation:walk-frames .58s steps(3,end) infinite}.map-token.walking[data-walk-role] .walking-sprite .chibi-avatar{display:none}@media(prefers-reduced-motion:reduce){.map-token.walking[data-walk-role] .walking-sprite{animation:none}}
+.map-token.walking.ferry[data-walk-role] .walking-sprite{animation:none}

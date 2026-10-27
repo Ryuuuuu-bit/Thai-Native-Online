@@ -14,7 +14,8 @@ test('real server saves legal decks atomically, matches private PvP, validates t
   const app=createServer({dataDir,botDelay:40,turnMs:10000,disconnectMs:200});await new Promise(r=>app.server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+app.server.address().port,peers=[];
   t.after(async()=>{for(const p of peers)p.ws.terminate();await app.close();removeTemp(dataDir,'native-cards-');});
   assert.equal((await (await fetch(base+'/health')).json()).catalog,100);assert.equal((await fetch(base+'/rpg-core.js')).status,404);assert.equal((await fetch(base+'/data/card-players.json')).status,404);assert.equal((await fetch(base+'/card-engine.js')).status,404);assert.equal((await fetch(base+'/battle.html',{redirect:'manual'})).status,302);
-  for(const file of ['life.html','life.css','life-client.js','life-engine.js','life-party.js','life-map.js','assets/life-bangkok.png','assets/life-characters.png','assets/life-interiors.png','assets/life-walk.png']){const response=await fetch(base+'/'+file);assert.equal(response.status,200,file);await response.arrayBuffer();}
+  for(const file of ['life.html','life.css','life-client.js','life-engine.js','life-party.js','life-map.js','assets/life-bangkok.png','assets/life-characters.png','assets/life-interiors.png','assets/life-walk.png','assets/careers-male.png','assets/careers-female.png']){const response=await fetch(base+'/'+file);assert.equal(response.status,200,file);await response.arrayBuffer();}
+  for(const role of ['unhoused','office','minimart','sales','rider','creator','student']){const response=await fetch(base+'/assets/career-walk-'+role+'.png');assert.equal(response.status,200,role);await response.arrayBuffer();}
   assert.equal((await fetch(base+'/life-multiplayer.cjs')).status,404);
   const a=await peer(base),b=await peer(base);peers.push(a,b);
   a.send({type:'starter',id:'water',request:'starter-water-qa'});await a.wait('profile');
